@@ -111,7 +111,7 @@ export default function VideoPlayer({ src, poster, onEnded, onLoadStart, isActiv
         const rect = containerRef.current?.getBoundingClientRect();
         if (!rect) return;
         
-        const x = (event as any).clientX - rect.left;
+        const x = (event as MouseEvent).clientX - rect.left;
         const centerX = rect.width / 2;
         
         if (Math.abs(x - centerX) < rect.width * 0.2) {
@@ -124,7 +124,7 @@ export default function VideoPlayer({ src, poster, onEnded, onLoadStart, isActiv
         const rect = containerRef.current?.getBoundingClientRect();
         if (!rect) return;
         
-        const x = (event as any).clientX - rect.left;
+        const x = (event as MouseEvent).clientX - rect.left;
         const leftZone = rect.width * 0.3;
         const rightZone = rect.width * 0.7;
         

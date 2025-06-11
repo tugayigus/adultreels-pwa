@@ -119,7 +119,7 @@ export default function VideoFeed({ initialVideos, onLoadMore }: VideoFeedProps)
         preloadVideo(videos[1].src);
       }
     }
-  }, []);
+  }, [videos, preloadVideo]);
 
   const setVideoRef = useCallback((id: string, element: HTMLDivElement | null) => {
     if (element) {

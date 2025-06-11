@@ -51,7 +51,7 @@ export default function AgeVerificationModal({ isOpen, onVerify }: AgeVerificati
               <h2 className="text-xl font-semibold mb-4">Age Verification Required</h2>
               <p className="text-gray-300 text-sm leading-relaxed">
                 This website contains adult content. You must be 18 years or older to continue.
-                By clicking "Yes, I am 18+", you confirm that you are of legal age in your jurisdiction.
+                By clicking &quot;Yes, I am 18+&quot;, you confirm that you are of legal age in your jurisdiction.
               </p>
             </div>
 

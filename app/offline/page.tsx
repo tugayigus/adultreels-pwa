@@ -10,9 +10,9 @@ export default function OfflinePage() {
         </div>
         
         <div className="mb-8">
-          <h2 className="text-xl font-semibold mb-4 text-white">You're Offline</h2>
+          <h2 className="text-xl font-semibold mb-4 text-white">You&apos;re Offline</h2>
           <p className="text-gray-300 text-sm leading-relaxed">
-            It looks like you've lost your internet connection. Please check your network and try again.
+            It looks like you&apos;ve lost your internet connection. Please check your network and try again.
           </p>
         </div>
 
