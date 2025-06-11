@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import VideoPlayer from './VideoPlayer';
+import VideoProgressBar from './VideoProgressBar';
+import { useVideo } from '@/lib/videoContext';
 
 interface Video {
   id: string;
@@ -24,6 +26,14 @@ export default function VideoFeed({ initialVideos, onLoadMore }: VideoFeedProps)
   const containerRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const videoRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  
+  const { 
+    currentTime, 
+    duration, 
+    activeVideoRef,
+    setCurrentTime,
+    currentVideoId 
+  } = useVideo();
 
   const preloadVideo = useCallback((src: string) => {
     if (preloadedVideos.has(src)) return;
@@ -129,12 +139,34 @@ export default function VideoFeed({ initialVideos, onLoadMore }: VideoFeedProps)
     }
   }, []);
 
+  // Global progress bar handlers
+  const handleSeek = useCallback((time: number) => {
+    if (activeVideoRef?.current && duration) {
+      const clampedTime = Math.max(0, Math.min(duration, time));
+      activeVideoRef.current.currentTime = clampedTime;
+      setCurrentTime(clampedTime);
+    }
+  }, [activeVideoRef, duration, setCurrentTime]);
+
+  const handleScrubStart = useCallback(() => {
+    if (activeVideoRef?.current && !activeVideoRef.current.paused) {
+      activeVideoRef.current.pause();
+    }
+  }, [activeVideoRef]);
+
+  const handleScrubEnd = useCallback(() => {
+    if (activeVideoRef?.current) {
+      activeVideoRef.current.play();
+    }
+  }, [activeVideoRef]);
+
   return (
-    <div 
-      ref={containerRef}
-      className="h-screen overflow-y-auto snap-y snap-mandatory scrollbar-hide"
-      style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-    >
+    <div className="relative">
+      <div 
+        ref={containerRef}
+        className="h-screen overflow-y-auto snap-y snap-mandatory scrollbar-hide"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
       {videos.map((video, index) => (
         <motion.div
           key={video.id}
@@ -172,6 +204,18 @@ export default function VideoFeed({ initialVideos, onLoadMore }: VideoFeedProps)
             className="w-8 h-8 border-2 border-white border-t-transparent rounded-full"
           />
         </div>
+      )}
+      </div>
+      
+      {/* Global Progress Bar - Always visible when video is active */}
+      {duration > 0 && currentVideoId && (
+        <VideoProgressBar
+          currentTime={currentTime}
+          duration={duration}
+          onSeek={handleSeek}
+          onScrubStart={handleScrubStart}
+          onScrubEnd={handleScrubEnd}
+        />
       )}
     </div>
   );

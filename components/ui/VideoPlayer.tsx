@@ -3,7 +3,6 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { VolumeX, Volume2, SkipBack, SkipForward } from 'lucide-react';
-import VideoProgressBar from './VideoProgressBar';
 import { useVideo } from '@/lib/videoContext';
 
 interface VideoPlayerProps {
@@ -19,7 +18,6 @@ export default function VideoPlayer({ src, poster, onEnded, onLoadStart, isActiv
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [gestureAnimation, setGestureAnimation] = useState<'left' | 'right' | null>(null);
-  const [isScrubbing, setIsScrubbing] = useState(false);
   const [showMuteIcon, setShowMuteIcon] = useState(false);
   const [tapTimeout, setTapTimeout] = useState<NodeJS.Timeout | null>(null);
   const [isDoubleTapping, setIsDoubleTapping] = useState(false);
@@ -54,35 +52,14 @@ export default function VideoPlayer({ src, poster, onEnded, onLoadStart, isActiv
     setTimeout(() => setGestureAnimation(null), 600);
   }, []);
 
-  const handleSeek = useCallback((time: number) => {
-    if (!videoRef.current || !duration || currentVideoId !== videoId) return;
-    
-    // Ensure time is within bounds
-    const clampedTime = Math.max(0, Math.min(duration, time));
-    videoRef.current.currentTime = clampedTime;
-    setCurrentTime(clampedTime);
-  }, [duration, currentVideoId, videoId, setCurrentTime]);
-
-  const handleScrubStart = useCallback(() => {
-    setIsScrubbing(true);
-    if (videoRef.current && !videoRef.current.paused) {
-      videoRef.current.pause();
-    }
-  }, []);
-
-  const handleScrubEnd = useCallback(() => {
-    setIsScrubbing(false);
-    if (videoRef.current && isPlaying) {
-      videoRef.current.play();
-    }
-  }, [isPlaying]);
+  // Scrubbing handlers removed - now handled by global progress bar
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
     const handleTimeUpdate = () => {
-      if (!isScrubbing && currentVideoId === videoId) {
+      if (currentVideoId === videoId) {
         setCurrentTime(video.currentTime);
       }
     };
@@ -131,7 +108,7 @@ export default function VideoPlayer({ src, poster, onEnded, onLoadStart, isActiv
       video.removeEventListener('ended', handleEnded);
       video.removeEventListener('loadstart', onLoadStart);
     };
-  }, [isActive, onEnded, onLoadStart, isScrubbing, isMuted, currentVideoId, videoId, setCurrentTime, setDuration, setIsPlaying]);
+  }, [isActive, onEnded, onLoadStart, isMuted, currentVideoId, videoId, setCurrentTime, setDuration, setIsPlaying]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -283,16 +260,7 @@ export default function VideoPlayer({ src, poster, onEnded, onLoadStart, isActiv
         )}
       </AnimatePresence>
 
-      {/* Bottom Progress Bar - Only for active video */}
-      {duration > 0 && currentVideoId === videoId && (
-        <VideoProgressBar
-          currentTime={currentTime}
-          duration={duration}
-          onSeek={handleSeek}
-          onScrubStart={handleScrubStart}
-          onScrubEnd={handleScrubEnd}
-        />
-      )}
+      {/* Progress bar removed from individual videos - now global */}
 
       {/* Gesture Zones */}
       <div className="gesture-zone left" />
