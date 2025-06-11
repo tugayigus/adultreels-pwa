@@ -45,10 +45,13 @@ export default function VideoPlayer({ src, poster, onEnded, onLoadStart, isActiv
   }, []);
 
   const handleSeek = useCallback((time: number) => {
-    if (!videoRef.current) return;
-    videoRef.current.currentTime = time;
-    setCurrentTime(time);
-  }, []);
+    if (!videoRef.current || !duration) return;
+    
+    // Ensure time is within bounds
+    const clampedTime = Math.max(0, Math.min(duration, time));
+    videoRef.current.currentTime = clampedTime;
+    setCurrentTime(clampedTime);
+  }, [duration]);
 
   const handleScrubStart = useCallback(() => {
     setIsScrubbing(true);
@@ -133,6 +136,12 @@ export default function VideoPlayer({ src, poster, onEnded, onLoadStart, isActiv
   }, [videoId, src]);
 
   const handleTap = useCallback((event: React.MouseEvent | React.TouchEvent) => {
+    // Check if tap is from progress bar area
+    const target = event.target as HTMLElement;
+    if (target.closest('.fixed.bottom-0')) {
+      return; // Don't handle taps on progress bar
+    }
+
     event.preventDefault();
     
     // Clear any existing timeout
@@ -145,7 +154,15 @@ export default function VideoPlayer({ src, poster, onEnded, onLoadStart, isActiv
     if (!rect) return;
 
     const clientX = 'touches' in event ? event.touches[0].clientX : event.clientX;
+    const clientY = 'touches' in event ? event.touches[0].clientY : event.clientY;
     const x = clientX - rect.left;
+    const y = clientY - rect.top;
+    
+    // Ignore taps in bottom 60px (progress bar area)
+    if (y > rect.height - 60) {
+      return;
+    }
+
     const leftZone = rect.width * 0.3;
     const rightZone = rect.width * 0.7;
 
@@ -216,7 +233,7 @@ export default function VideoPlayer({ src, poster, onEnded, onLoadStart, isActiv
 
       {/* Mute Icon */}
       <AnimatePresence>
-        {(showMuteIcon || isMuted) && (
+        {showMuteIcon && (
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -235,13 +252,15 @@ export default function VideoPlayer({ src, poster, onEnded, onLoadStart, isActiv
       </AnimatePresence>
 
       {/* Bottom Progress Bar */}
-      <VideoProgressBar
-        currentTime={currentTime}
-        duration={duration}
-        onSeek={handleSeek}
-        onScrubStart={handleScrubStart}
-        onScrubEnd={handleScrubEnd}
-      />
+      {duration > 0 && (
+        <VideoProgressBar
+          currentTime={currentTime}
+          duration={duration}
+          onSeek={handleSeek}
+          onScrubStart={handleScrubStart}
+          onScrubEnd={handleScrubEnd}
+        />
+      )}
 
       {/* Gesture Zones */}
       <div className="gesture-zone left" />

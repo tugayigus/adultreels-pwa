@@ -59,6 +59,7 @@ export default function VideoProgressBar({
   // Mouse events
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation(); // Prevent mute toggle
     handleInteractionStart(e.clientX);
   }, [handleInteractionStart]);
 
@@ -69,6 +70,7 @@ export default function VideoProgressBar({
   // Touch events
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     e.preventDefault();
+    e.stopPropagation(); // Prevent mute toggle
     const touch = e.touches[0];
     handleInteractionStart(touch.clientX);
   }, [handleInteractionStart]);
@@ -109,6 +111,8 @@ export default function VideoProgressBar({
         className="relative w-full h-12 flex items-center cursor-pointer"
         onMouseDown={handleMouseDown}
         onTouchStart={handleTouchStart}
+        onClick={(e) => e.stopPropagation()}
+        onTouchEnd={(e) => e.stopPropagation()}
         style={{ touchAction: 'none' }}
       >
         {/* Touch area (invisible, larger for easier interaction) */}
