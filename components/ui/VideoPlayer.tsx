@@ -3,6 +3,8 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { useGesture } from '@use-gesture/react';
 import { motion, AnimatePresence } from 'framer-motion';
+import VideoProgressBar from './VideoProgressBar';
+import { useVideo } from '@/lib/videoContext';
 
 interface VideoPlayerProps {
   src: string;
@@ -16,21 +18,18 @@ export default function VideoPlayer({ src, poster, onEnded, onLoadStart, isActiv
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [showControls, setShowControls] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
   const [gestureAnimation, setGestureAnimation] = useState<'left' | 'right' | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
+  const [isScrubbing, setIsScrubbing] = useState(false);
+  const [showMuteIcon, setShowMuteIcon] = useState(false);
+  const { isMuted, toggleMute } = useVideo();
 
-  const togglePlay = useCallback(() => {
-    if (!videoRef.current) return;
-    
-    if (isPlaying) {
-      videoRef.current.pause();
-    } else {
-      videoRef.current.play();
-    }
-    setIsPlaying(!isPlaying);
-  }, [isPlaying]);
+  const handleMuteToggle = useCallback(() => {
+    toggleMute();
+    setShowMuteIcon(true);
+    setTimeout(() => setShowMuteIcon(false), 2000);
+  }, [toggleMute]);
 
   const skipTime = useCallback((seconds: number) => {
     if (!videoRef.current) return;
@@ -42,26 +41,39 @@ export default function VideoPlayer({ src, poster, onEnded, onLoadStart, isActiv
     setTimeout(() => setGestureAnimation(null), 600);
   }, []);
 
-  const handleScrubbing = useCallback((value: number) => {
+  const handleSeek = useCallback((time: number) => {
     if (!videoRef.current) return;
-    
-    const newTime = (value / 100) * videoRef.current.duration;
-    videoRef.current.currentTime = newTime;
-    setProgress(value);
+    videoRef.current.currentTime = time;
+    setCurrentTime(time);
   }, []);
+
+  const handleScrubStart = useCallback(() => {
+    setIsScrubbing(true);
+    if (videoRef.current && !videoRef.current.paused) {
+      videoRef.current.pause();
+    }
+  }, []);
+
+  const handleScrubEnd = useCallback(() => {
+    setIsScrubbing(false);
+    if (videoRef.current && isPlaying) {
+      videoRef.current.play();
+    }
+  }, [isPlaying]);
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
     const handleTimeUpdate = () => {
-      if (!isDragging) {
-        const progressPercent = (video.currentTime / video.duration) * 100;
-        setProgress(progressPercent || 0);
+      if (!isScrubbing) {
+        setCurrentTime(video.currentTime);
       }
     };
 
     const handleLoadedMetadata = () => {
+      setDuration(video.duration);
+      video.muted = isMuted;
       if (isActive) {
         video.play().catch(() => {});
         setIsPlaying(true);
@@ -90,7 +102,7 @@ export default function VideoPlayer({ src, poster, onEnded, onLoadStart, isActiv
       video.removeEventListener('ended', handleEnded);
       video.removeEventListener('loadstart', onLoadStart);
     };
-  }, [isActive, onEnded, onLoadStart, isDragging]);
+  }, [isActive, onEnded, onLoadStart, isScrubbing, isMuted]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -103,20 +115,18 @@ export default function VideoPlayer({ src, poster, onEnded, onLoadStart, isActiv
     }
   }, [isActive, isPlaying]);
 
+  useEffect(() => {
+    const video = videoRef.current;
+    if (video) {
+      video.muted = isMuted;
+    }
+  }, [isMuted]);
+
   const bind = useGesture(
     {
       onClick: ({ event }) => {
         event.preventDefault();
-        
-        const rect = containerRef.current?.getBoundingClientRect();
-        if (!rect) return;
-        
-        const x = (event as MouseEvent).clientX - rect.left;
-        const centerX = rect.width / 2;
-        
-        if (Math.abs(x - centerX) < rect.width * 0.2) {
-          togglePlay();
-        }
+        handleMuteToggle();
       },
       onDoubleClick: ({ event }) => {
         event.preventDefault();
@@ -142,10 +152,6 @@ export default function VideoPlayer({ src, poster, onEnded, onLoadStart, isActiv
       ref={containerRef}
       {...bind()}
       className="relative w-full h-full bg-black overflow-hidden"
-      onMouseEnter={() => setShowControls(true)}
-      onMouseLeave={() => setShowControls(false)}
-      onTouchStart={() => setShowControls(true)}
-      onTouchEnd={() => setTimeout(() => setShowControls(false), 3000)}
     >
       <video
         ref={videoRef}
@@ -154,10 +160,11 @@ export default function VideoPlayer({ src, poster, onEnded, onLoadStart, isActiv
         className="w-full h-full object-cover"
         playsInline
         preload="metadata"
-        muted
+        muted={isMuted}
         loop={false}
       />
 
+      {/* Gesture Animation */}
       <AnimatePresence>
         {gestureAnimation && (
           <motion.div
@@ -166,7 +173,7 @@ export default function VideoPlayer({ src, poster, onEnded, onLoadStart, isActiv
             exit={{ opacity: 0, scale: 0.8 }}
             className={`absolute top-1/2 transform -translate-y-1/2 ${
               gestureAnimation === 'left' ? 'left-8' : 'right-8'
-            } bg-black/70 rounded-full p-4`}
+            } bg-black/70 rounded-full p-4 z-20`}
           >
             <div className="text-white text-2xl">
               {gestureAnimation === 'left' ? '⏪' : '⏩'}
@@ -175,42 +182,34 @@ export default function VideoPlayer({ src, poster, onEnded, onLoadStart, isActiv
         )}
       </AnimatePresence>
 
+      {/* Mute Icon */}
       <AnimatePresence>
-        {showControls && (
+        {(showMuteIcon || isMuted) && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            className="absolute top-4 right-4 z-20"
           >
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={togglePlay}
-                className="text-white text-2xl hover:scale-110 transition-transform"
-              >
-                {isPlaying ? '⏸️' : '▶️'}
-              </button>
-              
-              <div className="flex-1">
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={progress}
-                  onChange={(e) => {
-                    setIsDragging(true);
-                    handleScrubbing(parseFloat(e.target.value));
-                  }}
-                  onMouseUp={() => setIsDragging(false)}
-                  onTouchEnd={() => setIsDragging(false)}
-                  className="scrubber-track w-full"
-                />
+            <div className="bg-black/70 rounded-full p-2">
+              <div className="text-white text-xl">
+                {isMuted ? '🔇' : '🔊'}
               </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
+      {/* Bottom Progress Bar */}
+      <VideoProgressBar
+        currentTime={currentTime}
+        duration={duration}
+        onSeek={handleSeek}
+        onScrubStart={handleScrubStart}
+        onScrubEnd={handleScrubEnd}
+      />
+
+      {/* Gesture Zones */}
       <div className="gesture-zone left" />
       <div className="gesture-zone right" />
     </div>

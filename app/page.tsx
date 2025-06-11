@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import AgeVerificationModal from '@/components/ui/AgeVerificationModal';
 import VideoFeed from '@/components/ui/VideoFeed';
 import PWAInstallPrompt from '@/components/ui/PWAInstallPrompt';
+import { VideoProvider } from '@/lib/videoContext';
 import { getInitialVideos, getMoreVideos, type Video } from '@/lib/mockApi';
 
 export default function Home() {
@@ -61,12 +62,14 @@ export default function Home() {
   }
 
   return (
-    <main className="relative">
-      <VideoFeed 
-        initialVideos={initialVideos} 
-        onLoadMore={getMoreVideos}
-      />
-      <PWAInstallPrompt />
-    </main>
+    <VideoProvider>
+      <main className="relative">
+        <VideoFeed 
+          initialVideos={initialVideos} 
+          onLoadMore={getMoreVideos}
+        />
+        <PWAInstallPrompt />
+      </main>
+    </VideoProvider>
   );
 }
