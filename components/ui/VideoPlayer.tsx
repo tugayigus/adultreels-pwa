@@ -3,6 +3,7 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { useGesture } from '@use-gesture/react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { VolumeX, Volume2, SkipBack, SkipForward } from 'lucide-react';
 import VideoProgressBar from './VideoProgressBar';
 import { useVideo } from '@/lib/videoContext';
 
@@ -12,9 +13,10 @@ interface VideoPlayerProps {
   onEnded: () => void;
   onLoadStart: () => void;
   isActive: boolean;
+  videoId: string;
 }
 
-export default function VideoPlayer({ src, poster, onEnded, onLoadStart, isActive }: VideoPlayerProps) {
+export default function VideoPlayer({ src, poster, onEnded, onLoadStart, isActive, videoId }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -23,6 +25,8 @@ export default function VideoPlayer({ src, poster, onEnded, onLoadStart, isActiv
   const [gestureAnimation, setGestureAnimation] = useState<'left' | 'right' | null>(null);
   const [isScrubbing, setIsScrubbing] = useState(false);
   const [showMuteIcon, setShowMuteIcon] = useState(false);
+  const [tapTimeout, setTapTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [isDoubleTapping, setIsDoubleTapping] = useState(false);
   const { isMuted, toggleMute } = useVideo();
 
   const handleMuteToggle = useCallback(() => {
@@ -122,35 +126,62 @@ export default function VideoPlayer({ src, poster, onEnded, onLoadStart, isActiv
     }
   }, [isMuted]);
 
-  const bind = useGesture(
-    {
-      onClick: ({ event }) => {
-        event.preventDefault();
-        handleMuteToggle();
-      },
-      onDoubleClick: ({ event }) => {
-        event.preventDefault();
-        
-        const rect = containerRef.current?.getBoundingClientRect();
-        if (!rect) return;
-        
-        const x = (event as MouseEvent).clientX - rect.left;
-        const leftZone = rect.width * 0.3;
-        const rightZone = rect.width * 0.7;
-        
-        if (x < leftZone) {
-          skipTime(-5);
-        } else if (x > rightZone) {
-          skipTime(5);
-        }
-      },
+  // Reset progress when video changes
+  useEffect(() => {
+    setCurrentTime(0);
+    setDuration(0);
+    setIsPlaying(false);
+  }, [videoId, src]);
+
+  const handleTap = useCallback((event: React.MouseEvent | React.TouchEvent) => {
+    event.preventDefault();
+    
+    // Clear any existing timeout
+    if (tapTimeout) {
+      clearTimeout(tapTimeout);
+      setTapTimeout(null);
     }
-  );
+
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    const clientX = 'touches' in event ? event.touches[0].clientX : event.clientX;
+    const x = clientX - rect.left;
+    const leftZone = rect.width * 0.3;
+    const rightZone = rect.width * 0.7;
+
+    // Set up double-tap detection
+    setIsDoubleTapping(true);
+    const timeout = setTimeout(() => {
+      setIsDoubleTapping(false);
+      // Only trigger mute if this was truly a single tap (not part of double-tap)
+      if (!isDoubleTapping) {
+        handleMuteToggle();
+      }
+    }, 300);
+    setTapTimeout(timeout);
+
+    // Handle double-tap immediately
+    if (isDoubleTapping) {
+      clearTimeout(timeout);
+      setTapTimeout(null);
+      setIsDoubleTapping(false);
+      
+      if (x < leftZone) {
+        skipTime(-5);
+      } else if (x > rightZone) {
+        skipTime(5);
+      }
+    }
+  }, [tapTimeout, isDoubleTapping, handleMuteToggle, skipTime]);
+
+  const bind = useGesture({});
 
   return (
     <div 
       ref={containerRef}
-      {...bind()}
+      onClick={handleTap}
+      onTouchStart={handleTap}
       className="relative w-full h-full bg-black overflow-hidden"
     >
       <video
@@ -175,9 +206,11 @@ export default function VideoPlayer({ src, poster, onEnded, onLoadStart, isActiv
               gestureAnimation === 'left' ? 'left-8' : 'right-8'
             } bg-black/70 rounded-full p-4 z-20`}
           >
-            <div className="text-white text-2xl">
-              {gestureAnimation === 'left' ? '⏪' : '⏩'}
-            </div>
+            {gestureAnimation === 'left' ? (
+              <SkipBack className="w-8 h-8 text-white" />
+            ) : (
+              <SkipForward className="w-8 h-8 text-white" />
+            )}
           </motion.div>
         )}
       </AnimatePresence>
@@ -192,9 +225,11 @@ export default function VideoPlayer({ src, poster, onEnded, onLoadStart, isActiv
             className="absolute top-4 right-4 z-20"
           >
             <div className="bg-black/70 rounded-full p-2">
-              <div className="text-white text-xl">
-                {isMuted ? '🔇' : '🔊'}
-              </div>
+              {isMuted ? (
+                <VolumeX className="w-6 h-6 text-white drop-shadow-lg" />
+              ) : (
+                <Volume2 className="w-6 h-6 text-white drop-shadow-lg" />
+              )}
             </div>
           </motion.div>
         )}

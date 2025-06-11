@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Check, X } from 'lucide-react';
 
 interface AgeVerificationModalProps {
   isOpen: boolean;
@@ -60,18 +61,20 @@ export default function AgeVerificationModal({ isOpen, onVerify }: AgeVerificati
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => handleVerify(true)}
-                className="w-full py-4 px-6 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg hover:shadow-pink-500/25"
+                className="w-full py-4 px-6 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg hover:shadow-pink-500/25 flex items-center justify-center space-x-2"
               >
-                Yes, I am 18+
+                <Check className="w-5 h-5" />
+                <span>Yes, I am 18+</span>
               </motion.button>
               
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => handleVerify(false)}
-                className="w-full py-4 px-6 bg-gray-800 hover:bg-gray-700 text-gray-300 font-semibold rounded-xl transition-all duration-200"
+                className="w-full py-4 px-6 bg-gray-800 hover:bg-gray-700 text-gray-300 font-semibold rounded-xl transition-all duration-200 flex items-center justify-center space-x-2"
               >
-                No, I am under 18
+                <X className="w-5 h-5" />
+                <span>No, I am under 18</span>
               </motion.button>
             </div>
 

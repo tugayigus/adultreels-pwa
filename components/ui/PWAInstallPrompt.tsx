@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Download, X } from 'lucide-react';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 
 export default function PWAInstallPrompt() {
@@ -54,18 +55,20 @@ export default function PWAInstallPrompt() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={handleInstall}
-              className="flex-1 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white text-sm font-medium py-2 px-4 rounded-lg transition-all duration-200"
+              className="flex-1 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white text-sm font-medium py-2 px-4 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2"
             >
-              Install
+              <Download className="w-4 h-4" />
+              <span>Install</span>
             </motion.button>
             
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={handleDismiss}
-              className="px-4 py-2 text-gray-400 hover:text-white text-sm font-medium transition-colors duration-200"
+              className="px-4 py-2 text-gray-400 hover:text-white text-sm font-medium transition-colors duration-200 flex items-center space-x-1"
             >
-              Later
+              <X className="w-4 h-4" />
+              <span>Later</span>
             </motion.button>
           </div>
         </div>

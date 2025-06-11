@@ -151,6 +151,7 @@ export default function VideoFeed({ initialVideos, onLoadMore }: VideoFeedProps)
             onEnded={handleVideoEnd}
             onLoadStart={handleVideoLoadStart}
             isActive={index === currentIndex}
+            videoId={video.id}
           />
           
           {video.title && (

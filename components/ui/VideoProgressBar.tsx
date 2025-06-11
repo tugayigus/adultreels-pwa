@@ -106,7 +106,7 @@ export default function VideoProgressBar({
     <div className="fixed bottom-0 left-0 right-0 z-50 pb-safe">
       <div
         ref={progressBarRef}
-        className="relative w-full h-8 flex items-center cursor-pointer"
+        className="relative w-full h-12 flex items-center cursor-pointer"
         onMouseDown={handleMouseDown}
         onTouchStart={handleTouchStart}
         style={{ touchAction: 'none' }}
@@ -116,11 +116,11 @@ export default function VideoProgressBar({
         
         {/* Progress bar background */}
         <div className="relative w-full h-1 mx-4">
-          <div className="absolute inset-0 bg-white/20 rounded-full" />
+          <div className="absolute inset-0 bg-white/30 rounded-full" />
           
           {/* Progress fill */}
           <motion.div
-            className="absolute inset-y-0 left-0 bg-red-500 rounded-full origin-left"
+            className="absolute inset-y-0 left-0 bg-gradient-to-r from-pink-500 to-red-500 rounded-full origin-left"
             style={{
               width: `${progress}%`,
             }}
@@ -133,10 +133,10 @@ export default function VideoProgressBar({
           {/* Drag handle (visible when dragging) */}
           {isDragging && (
             <motion.div
-              className="absolute top-1/2 w-3 h-3 bg-red-500 rounded-full transform -translate-y-1/2 shadow-lg"
+              className="absolute top-1/2 w-4 h-4 bg-white rounded-full transform -translate-y-1/2 shadow-lg border-2 border-pink-500"
               style={{
                 left: `${progress}%`,
-                marginLeft: '-6px'
+                marginLeft: '-8px'
               }}
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
