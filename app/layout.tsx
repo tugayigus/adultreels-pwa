@@ -16,20 +16,23 @@ export const metadata: Metadata = {
   title: "AdultReels - Premium Adult Content",
   description: "Short-form premium adult video content in a seamless mobile experience",
   manifest: "/manifest.json",
-  themeColor: "#000000",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
     title: "AdultReels",
   },
-  viewport: {
+};
+
+export function generateViewport() {
+  return {
     width: "device-width",
     initialScale: 1,
     maximumScale: 1,
     userScalable: false,
     viewportFit: "cover",
-  },
-};
+    themeColor: "#000000",
+  };
+}
 
 export default function RootLayout({
   children,
