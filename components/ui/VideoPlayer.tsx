@@ -1,7 +1,6 @@
 'use client';
 
 import { useRef, useState, useEffect, useCallback } from 'react';
-import { useGesture } from '@use-gesture/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { VolumeX, Volume2, SkipBack, SkipForward } from 'lucide-react';
 import VideoProgressBar from './VideoProgressBar';
@@ -175,7 +174,7 @@ export default function VideoPlayer({ src, poster, onEnded, onLoadStart, isActiv
     }
   }, [tapTimeout, isDoubleTapping, handleMuteToggle, skipTime]);
 
-  const bind = useGesture({});
+  // Removed useGesture in favor of native event handlers
 
   return (
     <div 
