@@ -18,15 +18,25 @@ interface VideoPlayerProps {
 export default function VideoPlayer({ src, poster, onEnded, onLoadStart, isActive, videoId }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
   const [gestureAnimation, setGestureAnimation] = useState<'left' | 'right' | null>(null);
   const [isScrubbing, setIsScrubbing] = useState(false);
   const [showMuteIcon, setShowMuteIcon] = useState(false);
   const [tapTimeout, setTapTimeout] = useState<NodeJS.Timeout | null>(null);
   const [isDoubleTapping, setIsDoubleTapping] = useState(false);
-  const { isMuted, toggleMute } = useVideo();
+  
+  const { 
+    isMuted, 
+    toggleMute, 
+    currentVideoId,
+    setCurrentVideoId,
+    currentTime,
+    setCurrentTime,
+    duration,
+    setDuration,
+    isPlaying,
+    setIsPlaying,
+    setActiveVideoRef
+  } = useVideo();
 
   const handleMuteToggle = useCallback(() => {
     toggleMute();
@@ -45,13 +55,13 @@ export default function VideoPlayer({ src, poster, onEnded, onLoadStart, isActiv
   }, []);
 
   const handleSeek = useCallback((time: number) => {
-    if (!videoRef.current || !duration) return;
+    if (!videoRef.current || !duration || currentVideoId !== videoId) return;
     
     // Ensure time is within bounds
     const clampedTime = Math.max(0, Math.min(duration, time));
     videoRef.current.currentTime = clampedTime;
     setCurrentTime(clampedTime);
-  }, [duration]);
+  }, [duration, currentVideoId, videoId, setCurrentTime]);
 
   const handleScrubStart = useCallback(() => {
     setIsScrubbing(true);
@@ -72,22 +82,35 @@ export default function VideoPlayer({ src, poster, onEnded, onLoadStart, isActiv
     if (!video) return;
 
     const handleTimeUpdate = () => {
-      if (!isScrubbing) {
+      if (!isScrubbing && currentVideoId === videoId) {
         setCurrentTime(video.currentTime);
       }
     };
 
     const handleLoadedMetadata = () => {
-      setDuration(video.duration);
+      if (currentVideoId === videoId) {
+        setDuration(video.duration);
+      }
       video.muted = isMuted;
       if (isActive) {
         video.play().catch(() => {});
-        setIsPlaying(true);
+        if (currentVideoId === videoId) {
+          setIsPlaying(true);
+        }
       }
     };
 
-    const handlePlay = () => setIsPlaying(true);
-    const handlePause = () => setIsPlaying(false);
+    const handlePlay = () => {
+      if (currentVideoId === videoId) {
+        setIsPlaying(true);
+      }
+    };
+    
+    const handlePause = () => {
+      if (currentVideoId === videoId) {
+        setIsPlaying(false);
+      }
+    };
     const handleEnded = () => {
       setIsPlaying(false);
       onEnded();
@@ -108,7 +131,7 @@ export default function VideoPlayer({ src, poster, onEnded, onLoadStart, isActiv
       video.removeEventListener('ended', handleEnded);
       video.removeEventListener('loadstart', onLoadStart);
     };
-  }, [isActive, onEnded, onLoadStart, isScrubbing, isMuted]);
+  }, [isActive, onEnded, onLoadStart, isScrubbing, isMuted, currentVideoId, videoId, setCurrentTime, setDuration, setIsPlaying]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -128,12 +151,21 @@ export default function VideoPlayer({ src, poster, onEnded, onLoadStart, isActiv
     }
   }, [isMuted]);
 
-  // Reset progress when video changes
+  // Update active video when this video becomes active
   useEffect(() => {
-    setCurrentTime(0);
-    setDuration(0);
-    setIsPlaying(false);
-  }, [videoId, src]);
+    if (isActive && videoRef.current) {
+      setCurrentVideoId(videoId);
+      setActiveVideoRef(videoRef);
+    }
+  }, [isActive, videoId, setCurrentVideoId, setActiveVideoRef]);
+
+  // Reset local state when video changes  
+  useEffect(() => {
+    if (currentVideoId === videoId) {
+      // This is the active video, don't reset
+      return;
+    }
+  }, [videoId, src, currentVideoId]);
 
   const handleTap = useCallback((event: React.MouseEvent | React.TouchEvent) => {
     // Check if tap is from progress bar area
@@ -251,8 +283,8 @@ export default function VideoPlayer({ src, poster, onEnded, onLoadStart, isActiv
         )}
       </AnimatePresence>
 
-      {/* Bottom Progress Bar */}
-      {duration > 0 && (
+      {/* Bottom Progress Bar - Only for active video */}
+      {duration > 0 && currentVideoId === videoId && (
         <VideoProgressBar
           currentTime={currentTime}
           duration={duration}
