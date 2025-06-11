@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
-import VideoPlayer from './VideoPlayer';
-import VideoProgressBar from './VideoProgressBar';
+import TikTokVideoPlayer from './TikTokVideoPlayer';
 import { useVideo } from '@/lib/videoContext';
 
 interface Video {
@@ -13,28 +12,23 @@ interface Video {
   title?: string;
 }
 
-interface VideoFeedProps {
+interface TikTokVideoFeedProps {
   initialVideos: Video[];
   onLoadMore: () => Promise<Video[]>;
 }
 
-export default function VideoFeed({ initialVideos, onLoadMore }: VideoFeedProps) {
+export default function TikTokVideoFeed({ initialVideos, onLoadMore }: TikTokVideoFeedProps) {
   const [videos, setVideos] = useState<Video[]>(initialVideos);
-  const [currentIndex, setCurrentIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [preloadedVideos, setPreloadedVideos] = useState<Set<string>>(new Set());
+  
   const containerRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const videoRefs = useRef<Map<string, HTMLDivElement>>(new Map());
-  
-  const { 
-    currentTime, 
-    duration, 
-    activeVideoRef,
-    setCurrentTime,
-    currentVideoId 
-  } = useVideo();
 
+  const { currentVideoIndex, setCurrentVideoIndex } = useVideo();
+
+  // Preload video
   const preloadVideo = useCallback((src: string) => {
     if (preloadedVideos.has(src)) return;
     
@@ -46,6 +40,7 @@ export default function VideoFeed({ initialVideos, onLoadMore }: VideoFeedProps)
     setPreloadedVideos(prev => new Set([...prev, src]));
   }, [preloadedVideos]);
 
+  // Load more videos
   const loadMoreVideos = useCallback(async () => {
     if (isLoading) return;
     
@@ -54,6 +49,7 @@ export default function VideoFeed({ initialVideos, onLoadMore }: VideoFeedProps)
       const newVideos = await onLoadMore();
       setVideos(prev => [...prev, ...newVideos]);
       
+      // Preload first 2 new videos
       newVideos.slice(0, 2).forEach(video => {
         preloadVideo(video.src);
       });
@@ -64,23 +60,30 @@ export default function VideoFeed({ initialVideos, onLoadMore }: VideoFeedProps)
     }
   }, [isLoading, onLoadMore, preloadVideo]);
 
-  const handleVideoEnd = useCallback(() => {
-    if (currentIndex < videos.length - 1) {
-      setCurrentIndex(prev => prev + 1);
+  // Handle video end
+  const handleVideoEnd = useCallback((index: number) => {
+    if (index < videos.length - 1) {
+      const nextIndex = index + 1;
+      setCurrentVideoIndex(nextIndex);
+      
+      // Scroll to next video
+      const nextVideoElement = videoRefs.current.get(videos[nextIndex].id);
+      if (nextVideoElement) {
+        nextVideoElement.scrollIntoView({ behavior: 'smooth' });
+      }
     }
-  }, [currentIndex, videos.length]);
+  }, [videos, setCurrentVideoIndex]);
 
-  const handleVideoLoadStart = useCallback(() => {
-    const nextIndex = currentIndex + 1;
-    if (nextIndex < videos.length) {
-      preloadVideo(videos[nextIndex].src);
+  // Set video ref
+  const setVideoRef = useCallback((id: string, element: HTMLDivElement | null) => {
+    if (element) {
+      videoRefs.current.set(id, element);
+    } else {
+      videoRefs.current.delete(id);
     }
-    
-    if (nextIndex + 1 < videos.length) {
-      preloadVideo(videos[nextIndex + 1].src);
-    }
-  }, [currentIndex, videos, preloadVideo]);
+  }, []);
 
+  // Setup intersection observer
   useEffect(() => {
     if (observerRef.current) {
       observerRef.current.disconnect();
@@ -95,20 +98,31 @@ export default function VideoFeed({ initialVideos, onLoadMore }: VideoFeedProps)
           const videoIndex = videos.findIndex(v => v.id === videoId);
           
           if (entry.isIntersecting && entry.intersectionRatio > 0.5) {
-            setCurrentIndex(videoIndex);
+            setCurrentVideoIndex(videoIndex);
             
+            // Load more videos when near the end
             if (videoIndex >= videos.length - 3) {
               loadMoreVideos();
+            }
+
+            // Preload next videos
+            const nextIndex = videoIndex + 1;
+            if (nextIndex < videos.length) {
+              preloadVideo(videos[nextIndex].src);
+            }
+            if (nextIndex + 1 < videos.length) {
+              preloadVideo(videos[nextIndex + 1].src);
             }
           }
         });
       },
       {
         threshold: 0.5,
-        rootMargin: '0px 0px -20% 0px'
+        rootMargin: '-10% 0px -10% 0px'
       }
     );
 
+    // Observe all video elements
     videoRefs.current.forEach((element) => {
       if (observerRef.current) {
         observerRef.current.observe(element);
@@ -120,8 +134,9 @@ export default function VideoFeed({ initialVideos, onLoadMore }: VideoFeedProps)
         observerRef.current.disconnect();
       }
     };
-  }, [videos, loadMoreVideos]);
+  }, [videos, setCurrentVideoIndex, loadMoreVideos, preloadVideo]);
 
+  // Preload initial videos
   useEffect(() => {
     if (videos.length > 0) {
       preloadVideo(videos[0].src);
@@ -131,63 +146,44 @@ export default function VideoFeed({ initialVideos, onLoadMore }: VideoFeedProps)
     }
   }, [videos, preloadVideo]);
 
-  const setVideoRef = useCallback((id: string, element: HTMLDivElement | null) => {
-    if (element) {
-      videoRefs.current.set(id, element);
-    } else {
-      videoRefs.current.delete(id);
-    }
-  }, []);
-
-  // Global progress bar handlers
-  const handleSeek = useCallback((time: number) => {
-    if (activeVideoRef?.current && duration) {
-      const clampedTime = Math.max(0, Math.min(duration, time));
-      activeVideoRef.current.currentTime = clampedTime;
-      setCurrentTime(clampedTime);
-    }
-  }, [activeVideoRef, duration, setCurrentTime]);
-
-  const handleScrubStart = useCallback(() => {
-    if (activeVideoRef?.current && !activeVideoRef.current.paused) {
-      activeVideoRef.current.pause();
-    }
-  }, [activeVideoRef]);
-
-  const handleScrubEnd = useCallback(() => {
-    if (activeVideoRef?.current) {
-      activeVideoRef.current.play();
-    }
-  }, [activeVideoRef]);
-
   return (
-    <div className="relative">
-      <div 
-        ref={containerRef}
-        className="h-screen overflow-y-auto snap-y snap-mandatory scrollbar-hide"
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-      >
+    <div 
+      ref={containerRef}
+      className="h-screen overflow-y-auto snap-y snap-mandatory"
+      style={{ 
+        scrollbarWidth: 'none', 
+        msOverflowStyle: 'none',
+        WebkitScrollSnapType: 'y mandatory'
+      }}
+    >
+      {/* Hide scrollbar */}
+      <style jsx>{`
+        div::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
+
       {videos.map((video, index) => (
         <motion.div
           key={video.id}
           ref={(el) => setVideoRef(video.id, el)}
           data-video-id={video.id}
-          className="w-full h-screen snap-start relative"
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: index * 0.1 }}
+          className="w-full h-screen snap-start snap-always relative"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
         >
-          <VideoPlayer
+          <TikTokVideoPlayer
             src={video.src}
             poster={video.poster}
-            onEnded={handleVideoEnd}
-            onLoadStart={handleVideoLoadStart}
-            isActive={index === currentIndex}
-            videoId={video.id}
+            onEnded={() => handleVideoEnd(index)}
+            isActive={index === currentVideoIndex}
+            index={index}
           />
           
+          {/* Video Title */}
           {video.title && (
-            <div className="absolute bottom-20 left-4 right-4 z-10">
+            <div className="absolute bottom-20 left-4 right-4 z-10 pointer-events-none">
               <h3 className="text-white text-lg font-semibold drop-shadow-lg">
                 {video.title}
               </h3>
@@ -196,26 +192,15 @@ export default function VideoFeed({ initialVideos, onLoadMore }: VideoFeedProps)
         </motion.div>
       ))}
       
+      {/* Loading indicator */}
       {isLoading && (
-        <div className="w-full h-screen flex items-center justify-center bg-black">
+        <div className="w-full h-screen flex items-center justify-center bg-black snap-start">
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
             className="w-8 h-8 border-2 border-white border-t-transparent rounded-full"
           />
         </div>
-      )}
-      </div>
-      
-      {/* Global Progress Bar - Always visible when video is active */}
-      {duration > 0 && currentVideoId && (
-        <VideoProgressBar
-          currentTime={currentTime}
-          duration={duration}
-          onSeek={handleSeek}
-          onScrubStart={handleScrubStart}
-          onScrubEnd={handleScrubEnd}
-        />
       )}
     </div>
   );

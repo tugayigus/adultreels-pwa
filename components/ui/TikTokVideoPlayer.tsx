@@ -1,0 +1,324 @@
+'use client';
+
+import { useRef, useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { VolumeX, Volume2, SkipBack, SkipForward } from 'lucide-react';
+import { useVideo } from '@/lib/videoContext';
+
+interface TikTokVideoPlayerProps {
+  src: string;
+  poster?: string;
+  onEnded: () => void;
+  isActive: boolean;
+  index: number;
+}
+
+export default function TikTokVideoPlayer({ 
+  src, 
+  poster, 
+  onEnded, 
+  isActive, 
+  index 
+}: TikTokVideoPlayerProps) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const progressRef = useRef<HTMLDivElement>(null);
+  
+  // Local state
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [showMuteIcon, setShowMuteIcon] = useState(false);
+  const [gestureAnimation, setGestureAnimation] = useState<'left' | 'right' | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [tapCount, setTapCount] = useState(0);
+  const [tapTimer, setTapTimer] = useState<NodeJS.Timeout | null>(null);
+
+  // Global state
+  const { isMuted, toggleMute, setCurrentVideoIndex } = useVideo();
+
+  // Progress percentage
+  const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+
+  // Mute toggle handler
+  const handleMuteToggle = useCallback(() => {
+    toggleMute();
+    setShowMuteIcon(true);
+    setTimeout(() => setShowMuteIcon(false), 2000);
+  }, [toggleMute]);
+
+  // Skip time handler
+  const skipTime = useCallback((seconds: number) => {
+    if (!videoRef.current) return;
+    const newTime = Math.max(0, Math.min(duration, videoRef.current.currentTime + seconds));
+    videoRef.current.currentTime = newTime;
+    setCurrentTime(newTime);
+    
+    setGestureAnimation(seconds > 0 ? 'right' : 'left');
+    setTimeout(() => setGestureAnimation(null), 600);
+  }, [duration]);
+
+  // Progress bar seeking
+  const handleProgressSeek = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    if (!progressRef.current || !videoRef.current || duration <= 0) return;
+    
+    e.stopPropagation();
+    
+    const rect = progressRef.current.getBoundingClientRect();
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const x = clientX - rect.left;
+    const percentage = Math.max(0, Math.min(100, (x / rect.width) * 100));
+    const newTime = (percentage / 100) * duration;
+    
+    videoRef.current.currentTime = newTime;
+    setCurrentTime(newTime);
+  }, [duration]);
+
+  // Drag handlers for progress bar
+  const handleProgressMouseDown = useCallback((e: React.MouseEvent) => {
+    setIsDragging(true);
+    handleProgressSeek(e);
+  }, [handleProgressSeek]);
+
+  const handleProgressTouchStart = useCallback((e: React.TouchEvent) => {
+    setIsDragging(true);
+    handleProgressSeek(e);
+  }, [handleProgressSeek]);
+
+  // Global mouse/touch handlers
+  useEffect(() => {
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      if (isDragging && progressRef.current && videoRef.current && duration > 0) {
+        const rect = progressRef.current.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const percentage = Math.max(0, Math.min(100, (x / rect.width) * 100));
+        const newTime = (percentage / 100) * duration;
+        videoRef.current.currentTime = newTime;
+        setCurrentTime(newTime);
+      }
+    };
+
+    const handleGlobalTouchMove = (e: TouchEvent) => {
+      if (isDragging && progressRef.current && videoRef.current && duration > 0) {
+        const rect = progressRef.current.getBoundingClientRect();
+        const x = e.touches[0].clientX - rect.left;
+        const percentage = Math.max(0, Math.min(100, (x / rect.width) * 100));
+        const newTime = (percentage / 100) * duration;
+        videoRef.current.currentTime = newTime;
+        setCurrentTime(newTime);
+      }
+    };
+
+    const handleGlobalEnd = () => {
+      setIsDragging(false);
+    };
+
+    if (isDragging) {
+      document.addEventListener('mousemove', handleGlobalMouseMove);
+      document.addEventListener('mouseup', handleGlobalEnd);
+      document.addEventListener('touchmove', handleGlobalTouchMove);
+      document.addEventListener('touchend', handleGlobalEnd);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleGlobalMouseMove);
+      document.removeEventListener('mouseup', handleGlobalEnd);
+      document.removeEventListener('touchmove', handleGlobalTouchMove);
+      document.removeEventListener('touchend', handleGlobalEnd);
+    };
+  }, [isDragging, duration]);
+
+  // Video tap handler
+  const handleVideoTap = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    // Don't handle taps on progress bar
+    if ((e.target as HTMLElement).closest('.progress-bar')) {
+      return;
+    }
+
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const x = clientX - rect.left;
+    const leftZone = rect.width * 0.3;
+    const rightZone = rect.width * 0.7;
+
+    setTapCount(prev => prev + 1);
+
+    if (tapTimer) {
+      clearTimeout(tapTimer);
+    }
+
+    const timer = setTimeout(() => {
+      if (tapCount === 1) {
+        // Single tap - mute toggle
+        handleMuteToggle();
+      } else if (tapCount === 2) {
+        // Double tap - skip
+        if (x < leftZone) {
+          skipTime(-5);
+        } else if (x > rightZone) {
+          skipTime(5);
+        }
+      }
+      setTapCount(0);
+    }, 300);
+
+    setTapTimer(timer);
+  }, [tapCount, tapTimer, handleMuteToggle, skipTime]);
+
+  // Video event handlers
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handleTimeUpdate = () => {
+      if (!isDragging) {
+        setCurrentTime(video.currentTime);
+      }
+    };
+
+    const handleLoadedMetadata = () => {
+      setDuration(video.duration);
+      video.muted = isMuted;
+    };
+
+    const handlePlay = () => {};
+    const handlePause = () => {};
+    const handleEnded = () => {
+      onEnded();
+    };
+
+    video.addEventListener('timeupdate', handleTimeUpdate);
+    video.addEventListener('loadedmetadata', handleLoadedMetadata);
+    video.addEventListener('play', handlePlay);
+    video.addEventListener('pause', handlePause);
+    video.addEventListener('ended', handleEnded);
+
+    return () => {
+      video.removeEventListener('timeupdate', handleTimeUpdate);
+      video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      video.removeEventListener('play', handlePlay);
+      video.removeEventListener('pause', handlePause);
+      video.removeEventListener('ended', handleEnded);
+    };
+  }, [isDragging, isMuted, onEnded]);
+
+  // Handle active video changes
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (isActive) {
+      setCurrentVideoIndex(index);
+      video.muted = isMuted;
+      video.play().catch(() => {});
+    } else {
+      video.pause();
+      setCurrentTime(0);
+      video.currentTime = 0;
+    }
+  }, [isActive, index, setCurrentVideoIndex, isMuted]);
+
+  // Handle mute changes
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.muted = isMuted;
+    }
+  }, [isMuted]);
+
+  return (
+    <div 
+      ref={containerRef}
+      className="relative w-full h-full bg-black overflow-hidden"
+      onClick={handleVideoTap}
+      onTouchStart={handleVideoTap}
+    >
+      {/* Video Element */}
+      <video
+        ref={videoRef}
+        src={src}
+        poster={poster}
+        className="w-full h-full object-cover"
+        playsInline
+        preload="metadata"
+        loop={false}
+      />
+
+      {/* Progress Bar - Only show for active video */}
+      {isActive && duration > 0 && (
+        <div className="progress-bar absolute bottom-0 left-0 right-0 z-50 pb-safe">
+          <div
+            ref={progressRef}
+            className="relative w-full h-12 flex items-center cursor-pointer px-4"
+            onMouseDown={handleProgressMouseDown}
+            onTouchStart={handleProgressTouchStart}
+            style={{ touchAction: 'none' }}
+          >
+            {/* Progress track */}
+            <div className="relative w-full h-1">
+              <div className="absolute inset-0 bg-white/30 rounded-full" />
+              
+              {/* Progress fill */}
+              <div 
+                className="absolute inset-y-0 left-0 bg-gradient-to-r from-pink-500 to-red-500 rounded-full origin-left transition-all duration-100"
+                style={{ width: `${progress}%` }}
+              />
+              
+              {/* Drag handle */}
+              {isDragging && (
+                <div 
+                  className="absolute top-1/2 w-4 h-4 bg-white rounded-full transform -translate-y-1/2 shadow-lg border-2 border-pink-500"
+                  style={{ left: `${progress}%`, marginLeft: '-8px' }}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Gesture Animation */}
+      <AnimatePresence>
+        {gestureAnimation && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            className={`absolute top-1/2 transform -translate-y-1/2 ${
+              gestureAnimation === 'left' ? 'left-8' : 'right-8'
+            } bg-black/70 rounded-full p-4 z-20`}
+          >
+            {gestureAnimation === 'left' ? (
+              <SkipBack className="w-8 h-8 text-white" />
+            ) : (
+              <SkipForward className="w-8 h-8 text-white" />
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Mute Icon */}
+      <AnimatePresence>
+        {showMuteIcon && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            className="absolute top-4 right-4 z-20"
+          >
+            <div className="bg-black/70 rounded-full p-2">
+              {isMuted ? (
+                <VolumeX className="w-6 h-6 text-white drop-shadow-lg" />
+              ) : (
+                <Volume2 className="w-6 h-6 text-white drop-shadow-lg" />
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Gesture Zones for Visual Feedback */}
+      <div className="absolute top-0 left-0 w-1/3 h-full z-10 pointer-events-none" />
+      <div className="absolute top-0 right-0 w-1/3 h-full z-10 pointer-events-none" />
+    </div>
+  );
+}

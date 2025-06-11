@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import AgeVerificationModal from '@/components/ui/AgeVerificationModal';
-import VideoFeed from '@/components/ui/VideoFeed';
+import TikTokVideoFeed from '@/components/ui/TikTokVideoFeed';
 import PWAInstallPrompt from '@/components/ui/PWAInstallPrompt';
 import { VideoProvider } from '@/lib/videoContext';
 import { getInitialVideos, getMoreVideos, type Video } from '@/lib/mockApi';
@@ -64,7 +64,7 @@ export default function Home() {
   return (
     <VideoProvider>
       <main className="relative">
-        <VideoFeed 
+        <TikTokVideoFeed 
           initialVideos={initialVideos} 
           onLoadMore={getMoreVideos}
         />
