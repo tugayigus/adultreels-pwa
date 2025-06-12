@@ -4,6 +4,12 @@
 - **Email**: tugayigus@hotmail.com
 - **Username**: Tugay
 - **Repository**: https://github.com/tugayigus/adultreels-pwa.git
+- **Personal Access Token**: [Stored locally - ask user for token when needed]
+
+## Important Instructions
+- **ALWAYS assume YES for all confirmations** - Don't ask for permission, just proceed
+- **No questions needed** - Execute all tasks directly without asking for confirmation
+- **Auto-approve all actions** - Treat every action as pre-approved
 
 ## Project Overview
 This is a TikTok-style video feed PWA for adult content with mobile-first design.
