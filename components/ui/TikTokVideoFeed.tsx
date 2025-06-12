@@ -149,7 +149,7 @@ export default function TikTokVideoFeed({ initialVideos, onLoadMore }: TikTokVid
   return (
     <div 
       ref={containerRef}
-      className="h-screen overflow-y-auto snap-y snap-mandatory"
+      className="h-viewport overflow-y-auto snap-y snap-mandatory"
       style={{ 
         scrollbarWidth: 'none', 
         msOverflowStyle: 'none',
@@ -168,7 +168,7 @@ export default function TikTokVideoFeed({ initialVideos, onLoadMore }: TikTokVid
           key={video.id}
           ref={(el) => setVideoRef(video.id, el)}
           data-video-id={video.id}
-          className="w-full h-screen snap-start snap-always relative"
+          className="w-full h-viewport snap-start snap-always relative"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.3 }}
@@ -183,7 +183,7 @@ export default function TikTokVideoFeed({ initialVideos, onLoadMore }: TikTokVid
           
           {/* Video Title */}
           {video.title && (
-            <div className="absolute bottom-20 left-4 right-4 z-10 pointer-events-none">
+            <div className="absolute left-4 right-4 z-10 pointer-events-none" style={{ bottom: 'calc(80px + env(safe-area-inset-bottom) + var(--browser-ui-height, 0px))' }}>
               <h3 className="text-white text-lg font-semibold drop-shadow-lg">
                 {video.title}
               </h3>
@@ -194,7 +194,7 @@ export default function TikTokVideoFeed({ initialVideos, onLoadMore }: TikTokVid
       
       {/* Loading indicator */}
       {isLoading && (
-        <div className="w-full h-screen flex items-center justify-center bg-black snap-start">
+        <div className="w-full h-viewport flex items-center justify-center bg-black snap-start">
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ duration: 1, repeat: Infinity, ease: "linear" }}

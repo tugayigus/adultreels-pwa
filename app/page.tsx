@@ -43,7 +43,7 @@ export default function Home() {
 
   if (isLoading) {
     return (
-      <div className="h-screen bg-black flex items-center justify-center">
+      <div className="h-viewport bg-black flex items-center justify-center">
         <div className="text-center">
           <div className="w-12 h-12 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-white text-sm">Loading AdultReels...</p>

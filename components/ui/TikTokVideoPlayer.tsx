@@ -246,7 +246,7 @@ export default function TikTokVideoPlayer({
 
       {/* Progress Bar - Only show for active video */}
       {isActive && duration > 0 && (
-        <div className="progress-bar absolute bottom-0 left-0 right-0 z-50 pb-safe">
+        <div className="progress-bar-mobile">
           <div
             ref={progressRef}
             className="relative w-full h-12 flex items-center cursor-pointer px-4"
