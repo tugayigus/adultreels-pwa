@@ -99,13 +99,17 @@ export default function TikTokVideoFeed({ initialVideos, onLoadMore, startVideoP
           if (entry.isIntersecting && entry.intersectionRatio > 0.5) {
             setCurrentVideoIndex(videoIndex);
             
-            // Only update URL if this is not the initial load and we've actually moved to a different video
+            // Update URL if this is not the initial load and we've actually moved to a different video
+            // Always update URL regardless of current route (works for both / and /p/[id])
             if (!isInitialLoad && lastUrlUpdatedIndex.current !== videoIndex) {
               const currentVideo = videos[videoIndex];
               if (currentVideo) {
+                console.log('Updating URL to:', `/p/${currentVideo.permanentId}`, 'from video index:', videoIndex);
                 router.replace(`/p/${currentVideo.permanentId}`, { scroll: false });
                 lastUrlUpdatedIndex.current = videoIndex;
               }
+            } else {
+              console.log('URL update skipped - isInitialLoad:', isInitialLoad, 'lastIndex:', lastUrlUpdatedIndex.current, 'currentIndex:', videoIndex);
             }
             
             // Load more videos when near the end
@@ -201,12 +205,13 @@ export default function TikTokVideoFeed({ initialVideos, onLoadMore, startVideoP
       } else {
         // If no specific video found, start from beginning
         setCurrentVideoIndex(0);
-        setTimeout(() => setIsInitialLoad(false), 500);
+        setTimeout(() => setIsInitialLoad(false), 300);
       }
     } else {
       // If no startVideoPermanentId, start from beginning
       setCurrentVideoIndex(0);
-      setTimeout(() => setIsInitialLoad(false), 500);
+      // For homepage, mark initial load as complete faster
+      setTimeout(() => setIsInitialLoad(false), 300);
     }
   }, [startVideoPermanentId, videos, setCurrentVideoIndex]);
 
