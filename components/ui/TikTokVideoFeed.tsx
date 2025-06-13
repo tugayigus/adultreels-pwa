@@ -17,10 +17,12 @@ export default function TikTokVideoFeed({ initialVideos, onLoadMore, startVideoP
   const [videos, setVideos] = useState<Video[]>(initialVideos);
   const [isLoading, setIsLoading] = useState(false);
   const [preloadedVideos, setPreloadedVideos] = useState<Set<string>>(new Set());
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   
   const containerRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const videoRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const lastUrlUpdatedIndex = useRef<number>(-1);
 
   const { currentVideoIndex, setCurrentVideoIndex } = useVideo();
   const router = useRouter();
@@ -97,10 +99,13 @@ export default function TikTokVideoFeed({ initialVideos, onLoadMore, startVideoP
           if (entry.isIntersecting && entry.intersectionRatio > 0.5) {
             setCurrentVideoIndex(videoIndex);
             
-            // Update URL with current video's permanent ID
-            const currentVideo = videos[videoIndex];
-            if (currentVideo) {
-              router.replace(`/p/${currentVideo.permanentId}`, { scroll: false });
+            // Only update URL if this is not the initial load and we've actually moved to a different video
+            if (!isInitialLoad && lastUrlUpdatedIndex.current !== videoIndex) {
+              const currentVideo = videos[videoIndex];
+              if (currentVideo) {
+                router.replace(`/p/${currentVideo.permanentId}`, { scroll: false });
+                lastUrlUpdatedIndex.current = videoIndex;
+              }
             }
             
             // Load more videos when near the end
@@ -155,13 +160,22 @@ export default function TikTokVideoFeed({ initialVideos, onLoadMore, startVideoP
       const targetIndex = videos.findIndex(v => v.permanentId === startVideoPermanentId);
       if (targetIndex !== -1) {
         setCurrentVideoIndex(targetIndex);
+        lastUrlUpdatedIndex.current = targetIndex; // Set this to prevent URL update
         const targetElement = videoRefs.current.get(videos[targetIndex].id);
         if (targetElement) {
           setTimeout(() => {
             targetElement.scrollIntoView({ behavior: 'instant' });
+            // Mark initial load as complete after scrolling
+            setTimeout(() => setIsInitialLoad(false), 500);
           }, 100);
         }
+      } else {
+        // If no specific video, mark initial load as complete after a short delay
+        setTimeout(() => setIsInitialLoad(false), 1000);
       }
+    } else {
+      // If no startVideoPermanentId, mark initial load as complete after a short delay
+      setTimeout(() => setIsInitialLoad(false), 1000);
     }
   }, [startVideoPermanentId, videos, setCurrentVideoIndex]);
 
