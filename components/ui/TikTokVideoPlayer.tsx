@@ -300,7 +300,7 @@ export default function TikTokVideoPlayer({
       {isActive && (
         <div className="absolute z-30" style={{ 
           right: '16px',
-          bottom: 'calc(35px + env(safe-area-inset-bottom) + var(--browser-ui-height, 0px))'
+          bottom: 'calc(15px + env(safe-area-inset-bottom) + var(--browser-ui-height, 0px))'
         }}>
           {/* Share Button */}
           <button
