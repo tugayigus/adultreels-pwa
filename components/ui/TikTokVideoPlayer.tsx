@@ -296,11 +296,11 @@ export default function TikTokVideoPlayer({
         loop={false}
       />
 
-      {/* Action Icons - Share and Mute positioned directly above progress bar */}
+      {/* Action Icons - Share and Mute positioned directly above progress bar with minimal spacing */}
       {isActive && (
         <div className="absolute z-30" style={{ 
           right: '16px',
-          bottom: 'calc(80px + env(safe-area-inset-bottom) + var(--browser-ui-height, 0px) + 8px)'
+          bottom: 'calc(50px + env(safe-area-inset-bottom) + var(--browser-ui-height, 0px))'
         }}>
           {/* Share Button */}
           <button
@@ -328,18 +328,20 @@ export default function TikTokVideoPlayer({
         </div>
       )}
 
-      {/* Progress Bar - Only show for active video */}
+      {/* Progress Bar - Only show for active video, positioned at very bottom */}
       {isActive && duration > 0 && (
-        <div className="progress-bar-mobile">
+        <div className="absolute bottom-0 left-0 right-0 z-50" style={{
+          paddingBottom: 'env(safe-area-inset-bottom)'
+        }}>
           <div
             ref={progressRef}
-            className="relative w-full h-12 flex items-center cursor-pointer px-4"
+            className="relative w-full h-8 flex items-center cursor-pointer px-4"
             onMouseDown={handleProgressMouseDown}
             onTouchStart={handleProgressTouchStart}
             style={{ touchAction: 'none' }}
           >
             {/* Progress track */}
-            <div className="relative w-full h-1">
+            <div className="relative w-full h-2">
               <div className="absolute inset-0 bg-white/30 rounded-full" />
               
               {/* Progress fill */}
