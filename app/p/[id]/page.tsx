@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { isValidVideoId } from '@/lib/videoId';
 import AgeVerificationModal from '@/components/ui/AgeVerificationModal';
 import TikTokVideoFeed from '@/components/ui/TikTokVideoFeed';
@@ -64,7 +65,7 @@ export default function VideoPage({ params }: VideoPageProps) {
       <div className="h-screen bg-black flex items-center justify-center">
         <div className="text-center">
           <p className="text-white text-lg mb-4">Invalid video ID</p>
-          <a href="/" className="text-blue-400 underline">Go to homepage</a>
+          <Link href="/" className="text-blue-400 underline">Go to homepage</Link>
         </div>
       </div>
     );
