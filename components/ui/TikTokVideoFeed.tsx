@@ -100,7 +100,7 @@ export default function TikTokVideoFeed({ initialVideos, onLoadMore, startVideoP
             // Update URL with current video's permanent ID
             const currentVideo = videos[videoIndex];
             if (currentVideo) {
-              router.replace(`/video/${currentVideo.permanentId}`, { scroll: false });
+              router.replace(`/p/${currentVideo.permanentId}`, { scroll: false });
             }
             
             // Load more videos when near the end
