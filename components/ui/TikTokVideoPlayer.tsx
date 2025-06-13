@@ -296,23 +296,23 @@ export default function TikTokVideoPlayer({
         loop={false}
       />
 
-      {/* Action Icons - Share and Mute positioned directly above progress bar with minimal spacing */}
+      {/* Action Icons - Share and Mute positioned above progress bar */}
       {isActive && (
         <div className="absolute z-30" style={{ 
           right: '16px',
-          bottom: 'calc(15px + env(safe-area-inset-bottom) + var(--browser-ui-height, 0px))'
+          bottom: 'calc(50px + env(safe-area-inset-bottom) + var(--browser-ui-height, 0px))'
         }}>
-          {/* Share Button */}
+          {/* Share Button - positioned higher */}
           <button
             onClick={handleShare}
             onTouchStart={handleShare}
-            className="block mb-6 bg-black/70 hover:bg-black/80 rounded-full p-4 transition-all duration-200"
+            className="block mb-2 bg-black/70 hover:bg-black/80 rounded-full p-4 transition-all duration-200"
             aria-label="Share video"
           >
             <Share2 className="w-8 h-8 text-white" />
           </button>
           
-          {/* Mute Button */}
+          {/* Mute Button - close to share */}
           <button
             onClick={handleMuteToggle}
             onTouchStart={handleMuteToggle}
@@ -328,36 +328,35 @@ export default function TikTokVideoPlayer({
         </div>
       )}
 
-      {/* Progress Bar - Only show for active video, positioned at very bottom */}
+      {/* Progress Bar - Only show for active video, positioned at absolute bottom */}
       {isActive && duration > 0 && (
-        <div className="absolute bottom-0 left-0 right-0 z-50" style={{
-          paddingBottom: 'env(safe-area-inset-bottom)'
-        }}>
-          <div
-            ref={progressRef}
-            className="relative w-full h-8 flex items-center cursor-pointer px-4"
-            onMouseDown={handleProgressMouseDown}
-            onTouchStart={handleProgressTouchStart}
-            style={{ touchAction: 'none' }}
-          >
-            {/* Progress track */}
-            <div className="relative w-full h-2">
-              <div className="absolute inset-0 bg-white/30 rounded-full" />
-              
-              {/* Progress fill */}
+        <div 
+          ref={progressRef}
+          className="fixed bottom-0 left-0 right-0 z-50 w-full h-8 flex items-center cursor-pointer px-4"
+          onMouseDown={handleProgressMouseDown}
+          onTouchStart={handleProgressTouchStart}
+          style={{ 
+            touchAction: 'none',
+            paddingBottom: 'env(safe-area-inset-bottom)'
+          }}
+        >
+          {/* Progress track */}
+          <div className="relative w-full h-2">
+            <div className="absolute inset-0 bg-white/30 rounded-full" />
+            
+            {/* Progress fill */}
+            <div 
+              className="absolute inset-y-0 left-0 bg-gradient-to-r from-pink-500 to-red-500 rounded-full origin-left transition-all duration-100"
+              style={{ width: `${progress}%` }}
+            />
+            
+            {/* Drag handle */}
+            {isDragging && (
               <div 
-                className="absolute inset-y-0 left-0 bg-gradient-to-r from-pink-500 to-red-500 rounded-full origin-left transition-all duration-100"
-                style={{ width: `${progress}%` }}
+                className="absolute top-1/2 w-4 h-4 bg-white rounded-full transform -translate-y-1/2 shadow-lg border-2 border-pink-500"
+                style={{ left: `${progress}%`, marginLeft: '-8px' }}
               />
-              
-              {/* Drag handle */}
-              {isDragging && (
-                <div 
-                  className="absolute top-1/2 w-4 h-4 bg-white rounded-full transform -translate-y-1/2 shadow-lg border-2 border-pink-500"
-                  style={{ left: `${progress}%`, marginLeft: '-8px' }}
-                />
-              )}
-            </div>
+            )}
           </div>
         </div>
       )}
