@@ -15,9 +15,10 @@ interface Video {
 interface TikTokVideoFeedProps {
   initialVideos: Video[];
   onLoadMore: () => Promise<Video[]>;
+  startVideoId?: string | null;
 }
 
-export default function TikTokVideoFeed({ initialVideos, onLoadMore }: TikTokVideoFeedProps) {
+export default function TikTokVideoFeed({ initialVideos, onLoadMore, startVideoId }: TikTokVideoFeedProps) {
   const [videos, setVideos] = useState<Video[]>(initialVideos);
   const [isLoading, setIsLoading] = useState(false);
   const [preloadedVideos, setPreloadedVideos] = useState<Set<string>>(new Set());
@@ -146,6 +147,22 @@ export default function TikTokVideoFeed({ initialVideos, onLoadMore }: TikTokVid
     }
   }, [videos, preloadVideo]);
 
+  // Handle deep link to specific video
+  useEffect(() => {
+    if (startVideoId && videos.length > 0) {
+      const targetIndex = videos.findIndex(v => v.id === startVideoId);
+      if (targetIndex !== -1) {
+        setCurrentVideoIndex(targetIndex);
+        const targetElement = videoRefs.current.get(startVideoId);
+        if (targetElement) {
+          setTimeout(() => {
+            targetElement.scrollIntoView({ behavior: 'instant' });
+          }, 100);
+        }
+      }
+    }
+  }, [startVideoId, videos, setCurrentVideoIndex]);
+
   return (
     <div 
       ref={containerRef}
@@ -179,6 +196,7 @@ export default function TikTokVideoFeed({ initialVideos, onLoadMore }: TikTokVid
             onEnded={() => handleVideoEnd(index)}
             isActive={index === currentVideoIndex}
             index={index}
+            videoId={video.id}
           />
           
           {/* Video Title */}

@@ -11,6 +11,7 @@ export default function Home() {
   const [isAgeVerified, setIsAgeVerified] = useState(false);
   const [initialVideos, setInitialVideos] = useState<Video[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [startVideoId, setStartVideoId] = useState<string | null>(null);
 
   useEffect(() => {
     const checkAgeVerification = () => {
@@ -22,6 +23,13 @@ export default function Home() {
       try {
         const videos = await getInitialVideos();
         setInitialVideos(videos);
+        
+        // Check if we need to start at a specific video
+        const storedVideoId = sessionStorage.getItem('startVideoId');
+        if (storedVideoId) {
+          setStartVideoId(storedVideoId);
+          sessionStorage.removeItem('startVideoId');
+        }
       } catch (error) {
         console.error('Failed to load initial videos:', error);
       } finally {
@@ -67,6 +75,7 @@ export default function Home() {
         <TikTokVideoFeed 
           initialVideos={initialVideos} 
           onLoadMore={getMoreVideos}
+          startVideoId={startVideoId}
         />
         <PWAInstallPrompt />
       </main>

@@ -2,7 +2,7 @@
 
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { VolumeX, Volume2, SkipBack, SkipForward } from 'lucide-react';
+import { VolumeX, Volume2, SkipBack, SkipForward, Share2 } from 'lucide-react';
 import { useVideo } from '@/lib/videoContext';
 
 interface TikTokVideoPlayerProps {
@@ -11,6 +11,7 @@ interface TikTokVideoPlayerProps {
   onEnded: () => void;
   isActive: boolean;
   index: number;
+  videoId: string;
 }
 
 export default function TikTokVideoPlayer({ 
@@ -18,7 +19,8 @@ export default function TikTokVideoPlayer({
   poster, 
   onEnded, 
   isActive, 
-  index 
+  index,
+  videoId 
 }: TikTokVideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -32,12 +34,41 @@ export default function TikTokVideoPlayer({
   const [isDragging, setIsDragging] = useState(false);
   const [tapCount, setTapCount] = useState(0);
   const [tapTimer, setTapTimer] = useState<NodeJS.Timeout | null>(null);
+  const [showShareToast, setShowShareToast] = useState(false);
 
   // Global state
   const { isMuted, toggleMute, setCurrentVideoIndex } = useVideo();
 
   // Progress percentage
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+
+  // Share handler
+  const handleShare = useCallback(async (e: React.MouseEvent | React.TouchEvent) => {
+    e.stopPropagation();
+    
+    const shareUrl = `${window.location.origin}/video/${videoId}`;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Check out this video',
+          url: shareUrl,
+        });
+      } catch (err) {
+        if ((err as Error).name !== 'AbortError') {
+          console.error('Error sharing:', err);
+        }
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        setShowShareToast(true);
+        setTimeout(() => setShowShareToast(false), 2000);
+      } catch (err) {
+        console.error('Error copying to clipboard:', err);
+      }
+    }
+  }, [videoId]);
 
   // Mute toggle handler
   const handleMuteToggle = useCallback(() => {
@@ -244,6 +275,22 @@ export default function TikTokVideoPlayer({
         loop={false}
       />
 
+      {/* Share Button - Positioned above progress bar */}
+      {isActive && (
+        <button
+          onClick={handleShare}
+          onTouchStart={handleShare}
+          className="absolute z-30 bg-black/70 hover:bg-black/80 rounded-full p-3 transition-all duration-200"
+          style={{ 
+            right: '16px',
+            bottom: 'calc(80px + env(safe-area-inset-bottom) + var(--browser-ui-height, 0px) + 50px)'
+          }}
+          aria-label="Share video"
+        >
+          <Share2 className="w-5 h-5 text-white" />
+        </button>
+      )}
+
       {/* Progress Bar - Only show for active video */}
       {isActive && duration > 0 && (
         <div className="progress-bar-mobile">
@@ -312,6 +359,20 @@ export default function TikTokVideoPlayer({
                 <Volume2 className="w-6 h-6 text-white drop-shadow-lg" />
               )}
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Share Toast */}
+      <AnimatePresence>
+        {showShareToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black/90 px-6 py-3 rounded-lg z-50"
+          >
+            <p className="text-white text-sm font-medium">Link copied to clipboard!</p>
           </motion.div>
         )}
       </AnimatePresence>
