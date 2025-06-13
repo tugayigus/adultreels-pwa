@@ -7,9 +7,9 @@ import { Eye, EyeOff, Lock } from 'lucide-react';
 const ADMIN_SECRET_PATH = process.env.NEXT_PUBLIC_ADMIN_SECRET_PATH || 'xwayp-admin-2024';
 
 interface AdminLoginPageProps {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 }
 
 export default function AdminLoginPage({ params }: AdminLoginPageProps) {
@@ -18,15 +18,20 @@ export default function AdminLoginPage({ params }: AdminLoginPageProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  
-  // Only show login if the slug matches the secret path
-  const isAdminPath = params.slug === ADMIN_SECRET_PATH;
+  const [slug, setSlug] = useState<string | null>(null);
   
   useEffect(() => {
-    if (!isAdminPath) {
+    params.then(({ slug }) => setSlug(slug));
+  }, [params]);
+  
+  // Only show login if the slug matches the secret path
+  const isAdminPath = slug === ADMIN_SECRET_PATH;
+  
+  useEffect(() => {
+    if (slug !== null && !isAdminPath) {
       router.push('/');
     }
-  }, [isAdminPath, router]);
+  }, [slug, isAdminPath, router]);
   
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,12 +52,20 @@ export default function AdminLoginPage({ params }: AdminLoginPageProps) {
       } else {
         setError('Invalid password');
       }
-    } catch (err) {
+    } catch {
       setError('An error occurred. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
+  
+  if (slug === null) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="w-12 h-12 border-2 border-pink-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
   
   if (!isAdminPath) {
     return null;

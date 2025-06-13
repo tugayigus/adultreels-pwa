@@ -1,21 +1,22 @@
 'use client';
 
-import { redirect } from 'next/navigation';
 import { useEffect } from 'react';
 
 interface VideoPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default function VideoPage({ params }: VideoPageProps) {
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      sessionStorage.setItem('startVideoId', params.id);
-      window.location.href = '/';
-    }
-  }, [params.id]);
+    params.then(({ id }) => {
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('startVideoId', id);
+        window.location.href = '/';
+      }
+    });
+  }, [params]);
 
   return (
     <div className="h-screen bg-black flex items-center justify-center">

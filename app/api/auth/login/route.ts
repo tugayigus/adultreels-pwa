@@ -10,7 +10,8 @@ export async function POST(request: NextRequest) {
     
     if (password === ADMIN_PASSWORD) {
       // Set secure cookie
-      cookies().set('admin-auth', 'authenticated', {
+      const cookieStore = await cookies();
+      cookieStore.set('admin-auth', 'authenticated', {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
@@ -22,7 +23,7 @@ export async function POST(request: NextRequest) {
     }
     
     return NextResponse.json({ error: 'Invalid password' }, { status: 401 });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
   }
 }

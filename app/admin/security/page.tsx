@@ -79,7 +79,7 @@ export default function SecurityPage() {
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
-    } catch (error) {
+    } catch {
       setPasswordError('Failed to change password');
     } finally {
       setIsChangingPassword(false);

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Filter, Eye, Trash2, Edit2, MoreVertical, Download } from 'lucide-react';
+import { Search, Trash2, Edit2, MoreVertical } from 'lucide-react';
 
 interface Video {
   id: string;

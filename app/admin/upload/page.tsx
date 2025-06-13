@@ -39,6 +39,7 @@ export default function UploadPage() {
     
     const droppedFiles = Array.from(e.dataTransfer.files);
     handleFiles(droppedFiles);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   
   const handleFiles = (selectedFiles: File[]) => {
