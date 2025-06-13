@@ -296,11 +296,11 @@ export default function TikTokVideoPlayer({
         loop={false}
       />
 
-      {/* Action Icons - Share and Mute positioned above progress bar */}
+      {/* Action Icons - Share and Mute positioned directly above progress bar */}
       {isActive && (
         <div className="absolute z-30" style={{ 
           right: '16px',
-          bottom: 'calc(80px + env(safe-area-inset-bottom) + var(--browser-ui-height, 0px) + 50px)'
+          bottom: 'calc(80px + env(safe-area-inset-bottom) + var(--browser-ui-height, 0px) + 8px)'
         }}>
           {/* Share Button */}
           <button
