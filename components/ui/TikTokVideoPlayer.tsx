@@ -2,7 +2,7 @@
 
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { VolumeX, Volume2, SkipBack, SkipForward, Share2 } from 'lucide-react';
+import { VolumeX, Volume2, SkipBack, SkipForward, Share2, Play, Pause } from 'lucide-react';
 import { useVideo } from '@/lib/videoContext';
 
 interface TikTokVideoPlayerProps {
@@ -29,7 +29,8 @@ export default function TikTokVideoPlayer({
   // Local state
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [showMuteIcon, setShowMuteIcon] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [showPlayPauseIcon, setShowPlayPauseIcon] = useState(false);
   const [gestureAnimation, setGestureAnimation] = useState<'left' | 'right' | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [tapCount, setTapCount] = useState(0);
@@ -70,11 +71,24 @@ export default function TikTokVideoPlayer({
     }
   }, [videoPermanentId]);
 
-  // Mute toggle handler
-  const handleMuteToggle = useCallback(() => {
+  // Play/Pause toggle handler
+  const handlePlayPauseToggle = useCallback(() => {
+    if (!videoRef.current) return;
+    
+    if (isPlaying) {
+      videoRef.current.pause();
+    } else {
+      videoRef.current.play().catch(() => {});
+    }
+    
+    setShowPlayPauseIcon(true);
+    setTimeout(() => setShowPlayPauseIcon(false), 1000);
+  }, [isPlaying]);
+
+  // Mute toggle handler (for dedicated button)
+  const handleMuteToggle = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    e.stopPropagation();
     toggleMute();
-    setShowMuteIcon(true);
-    setTimeout(() => setShowMuteIcon(false), 2000);
   }, [toggleMute]);
 
   // Skip time handler
@@ -181,8 +195,8 @@ export default function TikTokVideoPlayer({
 
     const timer = setTimeout(() => {
       if (tapCount === 1) {
-        // Single tap - mute toggle
-        handleMuteToggle();
+        // Single tap - play/pause toggle
+        handlePlayPauseToggle();
       } else if (tapCount === 2) {
         // Double tap - skip
         if (x < leftZone) {
@@ -195,7 +209,7 @@ export default function TikTokVideoPlayer({
     }, 300);
 
     setTapTimer(timer);
-  }, [tapCount, tapTimer, handleMuteToggle, skipTime]);
+  }, [tapCount, tapTimer, handlePlayPauseToggle, skipTime]);
 
   // Video event handlers
   useEffect(() => {
@@ -213,9 +227,14 @@ export default function TikTokVideoPlayer({
       video.muted = isMuted;
     };
 
-    const handlePlay = () => {};
-    const handlePause = () => {};
+    const handlePlay = () => {
+      setIsPlaying(true);
+    };
+    const handlePause = () => {
+      setIsPlaying(false);
+    };
     const handleEnded = () => {
+      setIsPlaying(false);
       onEnded();
     };
 
@@ -243,8 +262,10 @@ export default function TikTokVideoPlayer({
       setCurrentVideoIndex(index);
       video.muted = isMuted;
       video.play().catch(() => {});
+      setIsPlaying(true);
     } else {
       video.pause();
+      setIsPlaying(false);
       setCurrentTime(0);
       video.currentTime = 0;
     }
@@ -275,20 +296,36 @@ export default function TikTokVideoPlayer({
         loop={false}
       />
 
-      {/* Share Button - Positioned above progress bar */}
+      {/* Action Icons - Share and Mute positioned above progress bar */}
       {isActive && (
-        <button
-          onClick={handleShare}
-          onTouchStart={handleShare}
-          className="absolute z-30 bg-black/70 hover:bg-black/80 rounded-full p-3 transition-all duration-200"
-          style={{ 
-            right: '16px',
-            bottom: 'calc(80px + env(safe-area-inset-bottom) + var(--browser-ui-height, 0px) + 50px)'
-          }}
-          aria-label="Share video"
-        >
-          <Share2 className="w-5 h-5 text-white" />
-        </button>
+        <div className="absolute z-30" style={{ 
+          right: '16px',
+          bottom: 'calc(80px + env(safe-area-inset-bottom) + var(--browser-ui-height, 0px) + 50px)'
+        }}>
+          {/* Share Button */}
+          <button
+            onClick={handleShare}
+            onTouchStart={handleShare}
+            className="block mb-3 bg-black/70 hover:bg-black/80 rounded-full p-3 transition-all duration-200"
+            aria-label="Share video"
+          >
+            <Share2 className="w-5 h-5 text-white" />
+          </button>
+          
+          {/* Mute Button */}
+          <button
+            onClick={handleMuteToggle}
+            onTouchStart={handleMuteToggle}
+            className="block bg-black/70 hover:bg-black/80 rounded-full p-3 transition-all duration-200"
+            aria-label={isMuted ? "Unmute video" : "Mute video"}
+          >
+            {isMuted ? (
+              <VolumeX className="w-5 h-5 text-white" />
+            ) : (
+              <Volume2 className="w-5 h-5 text-white" />
+            )}
+          </button>
+        </div>
       )}
 
       {/* Progress Bar - Only show for active video */}
@@ -343,20 +380,20 @@ export default function TikTokVideoPlayer({
         )}
       </AnimatePresence>
 
-      {/* Mute Icon */}
+      {/* Play/Pause Icon */}
       <AnimatePresence>
-        {showMuteIcon && (
+        {showPlayPauseIcon && (
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
-            className="absolute top-4 right-4 z-20"
+            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20"
           >
-            <div className="bg-black/70 rounded-full p-2">
-              {isMuted ? (
-                <VolumeX className="w-6 h-6 text-white drop-shadow-lg" />
+            <div className="bg-black/70 rounded-full p-4">
+              {isPlaying ? (
+                <Pause className="w-8 h-8 text-white drop-shadow-lg" />
               ) : (
-                <Volume2 className="w-6 h-6 text-white drop-shadow-lg" />
+                <Play className="w-8 h-8 text-white drop-shadow-lg" />
               )}
             </div>
           </motion.div>

@@ -193,10 +193,14 @@ export default function TikTokVideoFeed({ initialVideos, onLoadMore, startVideoP
             videoPermanentId={video.permanentId}
           />
           
-          {/* Video Title */}
+          {/* Video Title - Constrained to left 50% of screen */}
           {video.title && (
-            <div className="absolute left-4 right-4 z-10 pointer-events-none" style={{ bottom: 'calc(80px + env(safe-area-inset-bottom) + var(--browser-ui-height, 0px))' }}>
-              <h3 className="text-white text-lg font-semibold drop-shadow-lg">
+            <div className="absolute left-4 z-10 pointer-events-none" style={{ 
+              bottom: 'calc(80px + env(safe-area-inset-bottom) + var(--browser-ui-height, 0px))',
+              width: 'calc(50% - 16px)', // 50% width minus left padding
+              maxWidth: 'calc(50vw - 16px)' // Ensure it never exceeds 50% of viewport width
+            }}>
+              <h3 className="text-white text-lg font-semibold drop-shadow-lg line-clamp-2">
                 {video.title}
               </h3>
             </div>
