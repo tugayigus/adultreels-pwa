@@ -100,12 +100,21 @@ export default function TikTokVideoFeed({ initialVideos, onLoadMore, startVideoP
             setCurrentVideoIndex(videoIndex);
             
             // Update URL if this is not the initial load and we've actually moved to a different video
-            // Always update URL regardless of current route (works for both / and /p/[id])
             if (!isInitialLoad && lastUrlUpdatedIndex.current !== videoIndex) {
               const currentVideo = videos[videoIndex];
               if (currentVideo) {
-                console.log('Updating URL to:', `/p/${currentVideo.permanentId}`, 'from video index:', videoIndex);
-                router.replace(`/p/${currentVideo.permanentId}`, { scroll: false });
+                const newUrl = `/p/${currentVideo.permanentId}`;
+                console.log('Updating URL to:', newUrl, 'from video index:', videoIndex);
+                
+                // Use native History API for immediate URL update without navigation
+                if (typeof window !== 'undefined') {
+                  window.history.replaceState(
+                    { ...window.history.state, url: newUrl, as: newUrl },
+                    '',
+                    newUrl
+                  );
+                }
+                
                 lastUrlUpdatedIndex.current = videoIndex;
               }
             } else {
