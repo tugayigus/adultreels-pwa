@@ -300,29 +300,29 @@ export default function TikTokVideoPlayer({
       {isActive && (
         <div className="absolute z-30" style={{ 
           right: '16px',
-          bottom: 'calc(50px + env(safe-area-inset-bottom) + var(--browser-ui-height, 0px))'
+          bottom: 'calc(35px + env(safe-area-inset-bottom) + var(--browser-ui-height, 0px))'
         }}>
           {/* Share Button */}
           <button
             onClick={handleShare}
             onTouchStart={handleShare}
-            className="block mb-3 bg-black/70 hover:bg-black/80 rounded-full p-3 transition-all duration-200"
+            className="block mb-6 bg-black/70 hover:bg-black/80 rounded-full p-4 transition-all duration-200"
             aria-label="Share video"
           >
-            <Share2 className="w-5 h-5 text-white" />
+            <Share2 className="w-8 h-8 text-white" />
           </button>
           
           {/* Mute Button */}
           <button
             onClick={handleMuteToggle}
             onTouchStart={handleMuteToggle}
-            className="block bg-black/70 hover:bg-black/80 rounded-full p-3 transition-all duration-200"
+            className="block bg-black/70 hover:bg-black/80 rounded-full p-4 transition-all duration-200"
             aria-label={isMuted ? "Unmute video" : "Mute video"}
           >
             {isMuted ? (
-              <VolumeX className="w-5 h-5 text-white" />
+              <VolumeX className="w-8 h-8 text-white" />
             ) : (
-              <Volume2 className="w-5 h-5 text-white" />
+              <Volume2 className="w-8 h-8 text-white" />
             )}
           </button>
         </div>
