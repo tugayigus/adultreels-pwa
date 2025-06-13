@@ -5,13 +5,13 @@ import AgeVerificationModal from '@/components/ui/AgeVerificationModal';
 import TikTokVideoFeed from '@/components/ui/TikTokVideoFeed';
 import PWAInstallPrompt from '@/components/ui/PWAInstallPrompt';
 import { VideoProvider } from '@/lib/videoContext';
-import { getInitialVideos, getMoreVideos, type Video } from '@/lib/mockApi';
+import { getInitialVideos, getMoreVideos, getAllVideos, type Video } from '@/lib/mockApi';
 
 export default function Home() {
   const [isAgeVerified, setIsAgeVerified] = useState(false);
   const [initialVideos, setInitialVideos] = useState<Video[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [startVideoId, setStartVideoId] = useState<string | null>(null);
+  const [startVideoPermanentId, setStartVideoPermanentId] = useState<string | null>(null);
 
   useEffect(() => {
     const checkAgeVerification = () => {
@@ -21,14 +21,19 @@ export default function Home() {
 
     const loadInitialVideos = async () => {
       try {
-        const videos = await getInitialVideos();
-        setInitialVideos(videos);
+        // Check if we need to start at a specific video via deep link
+        const storedPermanentId = sessionStorage.getItem('startVideoPermanentId');
         
-        // Check if we need to start at a specific video
-        const storedVideoId = sessionStorage.getItem('startVideoId');
-        if (storedVideoId) {
-          setStartVideoId(storedVideoId);
-          sessionStorage.removeItem('startVideoId');
+        if (storedPermanentId) {
+          // Load all videos to enable full feed navigation
+          const allVideos = await getAllVideos();
+          setInitialVideos(allVideos);
+          setStartVideoPermanentId(storedPermanentId);
+          sessionStorage.removeItem('startVideoPermanentId');
+        } else {
+          // Normal homepage load - use paginated approach
+          const videos = await getInitialVideos();
+          setInitialVideos(videos);
         }
       } catch (error) {
         console.error('Failed to load initial videos:', error);
@@ -75,7 +80,7 @@ export default function Home() {
         <TikTokVideoFeed 
           initialVideos={initialVideos} 
           onLoadMore={getMoreVideos}
-          startVideoId={startVideoId}
+          startVideoPermanentId={startVideoPermanentId}
         />
         <PWAInstallPrompt />
       </main>

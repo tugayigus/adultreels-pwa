@@ -1,19 +1,21 @@
 'use client';
 
 import { useEffect } from 'react';
+import { migrateLegacyId } from '@/lib/videoId';
 
-interface VideoPageProps {
+interface LegacyVideoPageProps {
   params: Promise<{
     id: string;
   }>;
 }
 
-export default function VideoPage({ params }: VideoPageProps) {
+export default function LegacyVideoPage({ params }: LegacyVideoPageProps) {
   useEffect(() => {
     params.then(({ id }) => {
       if (typeof window !== 'undefined') {
-        sessionStorage.setItem('startVideoId', id);
-        window.location.href = '/';
+        // Convert legacy numeric ID to permanent ID and redirect
+        const permanentId = migrateLegacyId(id);
+        window.location.href = `/p/${permanentId}`;
       }
     });
   }, [params]);
@@ -22,7 +24,7 @@ export default function VideoPage({ params }: VideoPageProps) {
     <div className="h-screen bg-black flex items-center justify-center">
       <div className="text-center">
         <div className="w-12 h-12 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-        <p className="text-white text-sm">Loading video...</p>
+        <p className="text-white text-sm">Redirecting...</p>
       </div>
     </div>
   );

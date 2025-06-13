@@ -4,21 +4,15 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import TikTokVideoPlayer from './TikTokVideoPlayer';
 import { useVideo } from '@/lib/videoContext';
-
-interface Video {
-  id: string;
-  src: string;
-  poster?: string;
-  title?: string;
-}
+import { Video } from '@/lib/mockApi';
 
 interface TikTokVideoFeedProps {
   initialVideos: Video[];
   onLoadMore: () => Promise<Video[]>;
-  startVideoId?: string | null;
+  startVideoPermanentId?: string | null;
 }
 
-export default function TikTokVideoFeed({ initialVideos, onLoadMore, startVideoId }: TikTokVideoFeedProps) {
+export default function TikTokVideoFeed({ initialVideos, onLoadMore, startVideoPermanentId }: TikTokVideoFeedProps) {
   const [videos, setVideos] = useState<Video[]>(initialVideos);
   const [isLoading, setIsLoading] = useState(false);
   const [preloadedVideos, setPreloadedVideos] = useState<Set<string>>(new Set());
@@ -149,11 +143,11 @@ export default function TikTokVideoFeed({ initialVideos, onLoadMore, startVideoI
 
   // Handle deep link to specific video
   useEffect(() => {
-    if (startVideoId && videos.length > 0) {
-      const targetIndex = videos.findIndex(v => v.id === startVideoId);
+    if (startVideoPermanentId && videos.length > 0) {
+      const targetIndex = videos.findIndex(v => v.permanentId === startVideoPermanentId);
       if (targetIndex !== -1) {
         setCurrentVideoIndex(targetIndex);
-        const targetElement = videoRefs.current.get(startVideoId);
+        const targetElement = videoRefs.current.get(videos[targetIndex].id);
         if (targetElement) {
           setTimeout(() => {
             targetElement.scrollIntoView({ behavior: 'instant' });
@@ -161,7 +155,7 @@ export default function TikTokVideoFeed({ initialVideos, onLoadMore, startVideoI
         }
       }
     }
-  }, [startVideoId, videos, setCurrentVideoIndex]);
+  }, [startVideoPermanentId, videos, setCurrentVideoIndex]);
 
   return (
     <div 
@@ -196,7 +190,7 @@ export default function TikTokVideoFeed({ initialVideos, onLoadMore, startVideoI
             onEnded={() => handleVideoEnd(index)}
             isActive={index === currentVideoIndex}
             index={index}
-            videoId={video.id}
+            videoPermanentId={video.permanentId}
           />
           
           {/* Video Title */}

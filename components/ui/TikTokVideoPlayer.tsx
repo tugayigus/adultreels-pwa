@@ -11,7 +11,7 @@ interface TikTokVideoPlayerProps {
   onEnded: () => void;
   isActive: boolean;
   index: number;
-  videoId: string;
+  videoPermanentId: string;
 }
 
 export default function TikTokVideoPlayer({ 
@@ -20,7 +20,7 @@ export default function TikTokVideoPlayer({
   onEnded, 
   isActive, 
   index,
-  videoId 
+  videoPermanentId 
 }: TikTokVideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -46,7 +46,7 @@ export default function TikTokVideoPlayer({
   const handleShare = useCallback(async (e: React.MouseEvent | React.TouchEvent) => {
     e.stopPropagation();
     
-    const shareUrl = `${window.location.origin}/video/${videoId}`;
+    const shareUrl = `${window.location.origin}/p/${videoPermanentId}`;
     
     if (navigator.share) {
       try {
@@ -68,7 +68,7 @@ export default function TikTokVideoPlayer({
         console.error('Error copying to clipboard:', err);
       }
     }
-  }, [videoId]);
+  }, [videoPermanentId]);
 
   // Mute toggle handler
   const handleMuteToggle = useCallback(() => {
