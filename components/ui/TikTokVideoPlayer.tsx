@@ -224,7 +224,8 @@ export default function TikTokVideoPlayer({
 
     const handleLoadedMetadata = () => {
       setDuration(video.duration);
-      video.muted = isMuted;
+      // Only unmute if this is the active video
+      video.muted = isActive ? isMuted : true;
     };
 
     const handlePlay = () => {
@@ -264,7 +265,9 @@ export default function TikTokVideoPlayer({
       video.play().catch(() => {});
       setIsPlaying(true);
     } else {
+      // Ensure complete stop of inactive videos
       video.pause();
+      video.muted = true; // Force mute inactive videos
       setIsPlaying(false);
       // Don't reset time for inactive videos to prevent restart loops
       // setCurrentTime(0);
@@ -272,12 +275,12 @@ export default function TikTokVideoPlayer({
     }
   }, [isActive, index, setCurrentVideoIndex, isMuted]);
 
-  // Handle mute changes
+  // Handle mute changes - only for active video
   useEffect(() => {
-    if (videoRef.current) {
+    if (videoRef.current && isActive) {
       videoRef.current.muted = isMuted;
     }
-  }, [isMuted]);
+  }, [isMuted, isActive]);
 
   return (
     <div 
