@@ -20,9 +20,11 @@ export default function AgeVerificationModal({ isOpen, onVerify }: AgeVerificati
 
   const handleVerify = (verified: boolean) => {
     if (verified) {
-      sessionStorage.setItem('age-verified', 'true');
+      // Kalıcı cookie için localStorage kullan
+      localStorage.setItem('age-verified', 'true');
       onVerify(true);
     } else {
+      // No tıklandığında hiçbir şey kaydetme, sadece yönlendir
       window.location.href = 'https://www.google.com';
     }
   };

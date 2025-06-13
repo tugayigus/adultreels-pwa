@@ -15,7 +15,8 @@ export default function Home() {
 
   useEffect(() => {
     const checkAgeVerification = () => {
-      const verified = sessionStorage.getItem('age-verified') === 'true';
+      // localStorage'dan kalıcı cookie kontrolü
+      const verified = localStorage.getItem('age-verified') === 'true';
       setIsAgeVerified(verified);
     };
 
