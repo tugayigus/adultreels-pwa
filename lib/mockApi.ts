@@ -47,10 +47,22 @@ const SAMPLE_VIDEOS: Video[] = [
 let currentPage = 0;
 const PAGE_SIZE = 3;
 
+// Shuffle array function
+function shuffleArray<T>(array: T[]): T[] {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
 export const getInitialVideos = async (): Promise<Video[]> => {
   await new Promise(resolve => setTimeout(resolve, 500));
   currentPage = 0;
-  return SAMPLE_VIDEOS.slice(0, PAGE_SIZE);
+  // Randomize order on each load
+  const shuffledVideos = shuffleArray(SAMPLE_VIDEOS);
+  return shuffledVideos.slice(0, PAGE_SIZE);
 };
 
 export const getMoreVideos = async (): Promise<Video[]> => {
@@ -77,5 +89,6 @@ export const getVideoByPermanentId = async (permanentId: string): Promise<Video 
 
 export const getAllVideos = async (): Promise<Video[]> => {
   await new Promise(resolve => setTimeout(resolve, 100));
-  return [...SAMPLE_VIDEOS];
+  // Randomize order for full video list
+  return shuffleArray(SAMPLE_VIDEOS);
 };
