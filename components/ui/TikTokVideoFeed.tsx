@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import TikTokVideoPlayer from './TikTokVideoPlayer';
 import { useVideo } from '@/lib/videoContext';
 import { Video } from '@/lib/mockApi';
@@ -22,6 +23,7 @@ export default function TikTokVideoFeed({ initialVideos, onLoadMore, startVideoP
   const videoRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   const { currentVideoIndex, setCurrentVideoIndex } = useVideo();
+  const router = useRouter();
 
   // Preload video
   const preloadVideo = useCallback((src: string) => {
@@ -94,6 +96,12 @@ export default function TikTokVideoFeed({ initialVideos, onLoadMore, startVideoP
           
           if (entry.isIntersecting && entry.intersectionRatio > 0.5) {
             setCurrentVideoIndex(videoIndex);
+            
+            // Update URL with current video's permanent ID
+            const currentVideo = videos[videoIndex];
+            if (currentVideo) {
+              router.replace(`/video/${currentVideo.permanentId}`, { scroll: false });
+            }
             
             // Load more videos when near the end
             if (videoIndex >= videos.length - 3) {
