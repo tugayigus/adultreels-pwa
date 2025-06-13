@@ -130,19 +130,34 @@ export default function TikTokVideoFeed({ initialVideos, onLoadMore, startVideoP
       }
     );
 
-    // Observe all video elements
-    videoRefs.current.forEach((element) => {
-      if (observerRef.current) {
-        observerRef.current.observe(element);
-      }
-    });
+    // Observe all video elements - wait for them to be in DOM
+    const observeVideos = () => {
+      videoRefs.current.forEach((element) => {
+        if (observerRef.current) {
+          observerRef.current.observe(element);
+        }
+      });
+    };
+
+    // If we have video refs, observe immediately, otherwise wait a bit
+    if (videoRefs.current.size > 0) {
+      observeVideos();
+    } else {
+      const timer = setTimeout(observeVideos, 100);
+      return () => {
+        clearTimeout(timer);
+        if (observerRef.current) {
+          observerRef.current.disconnect();
+        }
+      };
+    }
 
     return () => {
       if (observerRef.current) {
         observerRef.current.disconnect();
       }
     };
-  }, [videos, setCurrentVideoIndex, loadMoreVideos, preloadVideo]);
+  }, [videos, setCurrentVideoIndex, loadMoreVideos, preloadVideo, isInitialLoad, router]);
 
   // Preload initial videos
   useEffect(() => {
@@ -161,21 +176,37 @@ export default function TikTokVideoFeed({ initialVideos, onLoadMore, startVideoP
       if (targetIndex !== -1) {
         setCurrentVideoIndex(targetIndex);
         lastUrlUpdatedIndex.current = targetIndex; // Set this to prevent URL update
-        const targetElement = videoRefs.current.get(videos[targetIndex].id);
-        if (targetElement) {
-          setTimeout(() => {
+        
+        // Wait for video refs to be set before scrolling
+        const waitForRef = () => {
+          const targetElement = videoRefs.current.get(videos[targetIndex].id);
+          if (targetElement) {
             targetElement.scrollIntoView({ behavior: 'instant' });
-            // Mark initial load as complete after scrolling
-            setTimeout(() => setIsInitialLoad(false), 500);
-          }, 100);
-        }
+            // Mark initial load as complete after scrolling and observer setup
+            setTimeout(() => {
+              setIsInitialLoad(false);
+              // Trigger intersection observer manually for initial video
+              if (observerRef.current) {
+                observerRef.current.disconnect();
+                observerRef.current.observe(targetElement);
+              }
+            }, 300);
+          } else {
+            // If ref not ready, try again
+            setTimeout(waitForRef, 50);
+          }
+        };
+        
+        setTimeout(waitForRef, 100);
       } else {
-        // If no specific video, mark initial load as complete after a short delay
-        setTimeout(() => setIsInitialLoad(false), 1000);
+        // If no specific video found, start from beginning
+        setCurrentVideoIndex(0);
+        setTimeout(() => setIsInitialLoad(false), 500);
       }
     } else {
-      // If no startVideoPermanentId, mark initial load as complete after a short delay
-      setTimeout(() => setIsInitialLoad(false), 1000);
+      // If no startVideoPermanentId, start from beginning
+      setCurrentVideoIndex(0);
+      setTimeout(() => setIsInitialLoad(false), 500);
     }
   }, [startVideoPermanentId, videos, setCurrentVideoIndex]);
 
