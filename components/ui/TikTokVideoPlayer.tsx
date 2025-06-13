@@ -266,8 +266,9 @@ export default function TikTokVideoPlayer({
     } else {
       video.pause();
       setIsPlaying(false);
-      setCurrentTime(0);
-      video.currentTime = 0;
+      // Don't reset time for inactive videos to prevent restart loops
+      // setCurrentTime(0);
+      // video.currentTime = 0;
     }
   }, [isActive, index, setCurrentVideoIndex, isMuted]);
 
