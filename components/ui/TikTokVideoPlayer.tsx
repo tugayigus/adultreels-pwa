@@ -281,7 +281,7 @@ export default function TikTokVideoPlayer({
   return (
     <div 
       ref={containerRef}
-      className="relative w-full h-full bg-black overflow-hidden"
+      className="relative w-full h-full bg-black overflow-hidden flex justify-center items-center"
       onClick={handleVideoTap}
       onTouchStart={handleVideoTap}
     >
@@ -290,7 +290,12 @@ export default function TikTokVideoPlayer({
         ref={videoRef}
         src={src}
         poster={poster}
-        className="w-full h-full object-cover"
+        className="w-auto h-full object-contain"
+        style={{
+          aspectRatio: '9/16',
+          maxWidth: 'calc(100vh * 9/16)',
+          margin: '0 auto'
+        }}
         playsInline
         preload="metadata"
         loop={false}
